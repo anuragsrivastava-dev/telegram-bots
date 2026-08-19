@@ -242,10 +242,11 @@ async def set_commands(application):
 
 
 request = HTTPXRequest(
-    connect_timeout=30.0,
-    read_timeout=30.0,
-    write_timeout=30.0,
-    pool_timeout=30.0,
+    connection_pool_size=20,
+    connect_timeout=60.0,
+    read_timeout=60.0,
+    write_timeout=60.0,
+    pool_timeout=60.0,
 )
 
 app = ApplicationBuilder().token(GAME_BOT_TOKEN).request(request).post_init(set_commands).build()

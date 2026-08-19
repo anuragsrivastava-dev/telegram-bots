@@ -1,5 +1,8 @@
 import asyncio
+import logging
 import sys
+
+from telegram.error import TimedOut, NetworkError
 
 from bot import app as python_bot
 from meow_bot import app as meow_bot
@@ -13,6 +16,20 @@ from game_bot import app as game_bot
 from quiz_bot import app as quiz_bot
 
 from config import GAME_BOT_TOKEN, QUIZ_BOT_TOKEN
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+async def global_error_handler(update, context):
+    if isinstance(context.error, (TimedOut, NetworkError)):
+        logging.warning("Transient network timeout in bot (%s). Handled gracefully.", context.error)
+        return
+    logging.error("Exception while handling an update:", exc_info=context.error)
+
 
 # Base list of unique bot instances
 bots = [
@@ -34,9 +51,16 @@ if QUIZ_BOT_TOKEN and QUIZ_BOT_TOKEN != GAME_BOT_TOKEN:
 
 async def main():
     for bot_app in bots:
+        bot_app.add_error_handler(global_error_handler)
         await bot_app.initialize()
         await bot_app.start()
-        await bot_app.updater.start_polling(drop_pending_updates=True)
+        await bot_app.updater.start_polling(
+            drop_pending_updates=True,
+            read_timeout=30.0,
+            write_timeout=30.0,
+            connect_timeout=30.0,
+            pool_timeout=30.0,
+        )
         await asyncio.sleep(0.5)
 
     print("🤖 Python Runner Bot is online...")

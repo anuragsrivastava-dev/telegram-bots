@@ -396,11 +396,19 @@ async def wisp_reminder(context: ContextTypes.DEFAULT_TYPE):
 
 
 # ==========================
-# Main
-# ==========================
 initialize_database()
 
-app = ApplicationBuilder().token(MEOW_TOKEN).post_init(set_commands).build()
+from telegram.request import HTTPXRequest
+
+request = HTTPXRequest(
+    connection_pool_size=20,
+    connect_timeout=60.0,
+    read_timeout=60.0,
+    write_timeout=60.0,
+    pool_timeout=60.0,
+)
+
+app = ApplicationBuilder().token(MEOW_TOKEN).request(request).post_init(set_commands).build()
 
 app.job_queue.run_repeating(
     wisp_reminder,
