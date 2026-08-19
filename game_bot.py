@@ -120,20 +120,10 @@ async def play_catcher(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def play_flappy(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = None
-    try:
-        msg = await context.bot.send_game(
-            chat_id=chat_id,
-            game_short_name="flappy_bird",
-        )
-    except Exception:
-        try:
-            msg = await context.bot.send_game(
-                chat_id=chat_id,
-                game_short_name="flappy",
-            )
-        except Exception:
-            pass
+    msg = await context.bot.send_game(
+        chat_id=chat_id,
+        game_short_name="flappy",
+    )
     if msg:
         chat_last_game_msg[chat_id] = msg.message_id
 
@@ -175,8 +165,7 @@ async def inline_game_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineQueryResultGame(id="3", game_short_name="uno"),
         InlineQueryResultGame(id="4", game_short_name="paddle"),
         InlineQueryResultGame(id="5", game_short_name="heart_catcher"),
-        InlineQueryResultGame(id="6", game_short_name="flappy_bird"),
-        InlineQueryResultGame(id="7", game_short_name="flappy"),
+        InlineQueryResultGame(id="6", game_short_name="flappy"),
     ]
     await update.inline_query.answer(results, cache_time=0)
 
