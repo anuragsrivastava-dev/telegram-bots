@@ -1,3 +1,4 @@
+import os
 import asyncio
 import datetime
 import math
@@ -26,7 +27,8 @@ from telegram.ext import (
     filters,
 )
 
-DB_PATH = "hud_bot.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "hud_bot.db")
 
 CITY_PROFILES = {
     "user1": {

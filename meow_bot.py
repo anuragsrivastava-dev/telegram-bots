@@ -30,8 +30,9 @@ from telegram.ext import (
 from groq import AsyncGroq
 from config import MEOW_TOKEN, GROQ_API_KEY
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REMINDER_CHAT_ID = 8630258661
-REMINDER_FILE = "wisp_reminder.json"
+REMINDER_FILE = os.path.join(BASE_DIR, "wisp_reminder.json")
 REMINDER_DAYS = 28
 
 client = AsyncGroq(api_key=GROQ_API_KEY)

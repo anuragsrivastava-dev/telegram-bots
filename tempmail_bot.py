@@ -1,3 +1,4 @@
+import os
 import re
 import uuid
 import sqlite3
@@ -13,7 +14,8 @@ from telegram.ext import (
     ContextTypes,
 )
 
-DB_PATH = "tempmail.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "tempmail.db")
 
 # Primary & Fallback Endpoints
 MAIL_TM_URL = "https://api.mail.tm"

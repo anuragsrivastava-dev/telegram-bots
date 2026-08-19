@@ -17,8 +17,9 @@ from telegram.ext import (
 )
 from config import QUIZ_BOT_TOKEN, ADMIN_USER_ID
 
-COURSE_FILE = "python_course.json"
-PROGRESS_FILE = "python_progress.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+COURSE_FILE = os.path.join(BASE_DIR, "python_course.json")
+PROGRESS_FILE = os.path.join(BASE_DIR, "python_progress.json")
 
 DEFAULT_COURSE = [
     {

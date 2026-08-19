@@ -1,3 +1,4 @@
+import os
 import asyncio
 import random
 import re
@@ -21,7 +22,8 @@ from telegram.ext import (
     filters,
 )
 
-DB_PATH = "memory_scores.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "memory_scores.db")
 
 EMOJI_BANK = [
     "🌹", "💌", "🍫", "🥂", "💍", "✈️", "🌙", "🐱",

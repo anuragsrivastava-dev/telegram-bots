@@ -1,6 +1,8 @@
+import os
 import sqlite3
 
-DATABASE = "meow.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "meow.db")
 
 
 def get_connection():

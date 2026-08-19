@@ -56,44 +56,57 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(help_text, parse_mode="Markdown")
 
 
+chat_last_game_msg: dict[int, int] = {}
+
+
 async def play_chess(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    await context.bot.send_game(
+    msg = await context.bot.send_game(
         chat_id=chat_id,
         game_short_name="chess",
     )
+    if msg:
+        chat_last_game_msg[chat_id] = msg.message_id
 
 
 async def play_snakes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    await context.bot.send_game(
+    msg = await context.bot.send_game(
         chat_id=chat_id,
         game_short_name="snakes",
     )
+    if msg:
+        chat_last_game_msg[chat_id] = msg.message_id
 
 
 async def play_uno(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    await context.bot.send_game(
+    msg = await context.bot.send_game(
         chat_id=chat_id,
         game_short_name="uno",
     )
+    if msg:
+        chat_last_game_msg[chat_id] = msg.message_id
 
 
 async def play_paddle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    await context.bot.send_game(
+    msg = await context.bot.send_game(
         chat_id=chat_id,
         game_short_name="paddle",
     )
+    if msg:
+        chat_last_game_msg[chat_id] = msg.message_id
 
 
 async def play_catcher(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    await context.bot.send_game(
+    msg = await context.bot.send_game(
         chat_id=chat_id,
         game_short_name="heart_catcher",
     )
+    if msg:
+        chat_last_game_msg[chat_id] = msg.message_id
 
 
 async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -107,6 +120,12 @@ async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = query.message.chat_id if query.message else ""
     msg_id = query.message.message_id if query.message else ""
     inline_id = query.inline_message_id or ""
+
+    if chat_id and msg_id:
+        try:
+            chat_last_game_msg[int(chat_id)] = int(msg_id)
+        except Exception:
+            pass
 
     base_url = GAMES[game_key]["url"]
     target_url = (
@@ -135,21 +154,35 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
 
+    target_msg_id = None
+    if update.message and update.message.reply_to_message:
+        target_msg_id = update.message.reply_to_message.message_id
+    elif chat_id in chat_last_game_msg:
+        target_msg_id = chat_last_game_msg[chat_id]
+
+    if not target_msg_id:
+        await update.message.reply_text(
+            "🏆 *Game Leaderboard:*\n\nScores are updated directly on each game card in chat!\n\nTo fetch text leaderboard, reply to a game card with `/scores` or launch a game (`/chess`, `/snakes`, `/uno`, `/paddle`, `/catch`).",
+            parse_mode="Markdown"
+        )
+        return
+
     try:
         scores = await context.bot.get_game_high_scores(
             user_id=user_id,
             chat_id=chat_id,
+            message_id=target_msg_id,
         )
         if not scores:
-            await update.message.reply_text("🏆 No match wins logged yet! Play a round to set a record.")
+            await update.message.reply_text("🏆 No match wins logged yet on this game card! Finish a match to set a record.")
             return
 
-        lines = ["🏆 *Game Bot Leaderboard:*\n"]
+        lines = ["🏆 *Game Card Leaderboard:*\n"]
         for score_obj in scores:
             lines.append(f"`#{score_obj.position}` *{score_obj.user.first_name}* — `{score_obj.score}` wins")
         await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
     except Exception:
-        await update.message.reply_text("Play a game first to start logging wins!")
+        await update.message.reply_text("🏆 *Scores are live on the game message card above!*\n\nFinish a match to update the scoreboard.")
 
 
 async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
