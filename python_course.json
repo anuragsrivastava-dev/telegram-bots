@@ -1,0 +1,100 @@
+[
+  {
+    "id": "ch1_variables",
+    "title": "1. Variables & Data Types",
+    "icon": "📦",
+    "questions": [
+      {
+        "q": "What will be the output of:\n```python\nx = '10'\ny = '20'\nprint(x + y)\n```",
+        "options": [
+          "30",
+          "1020",
+          "TypeError",
+          "'30'"
+        ],
+        "answer": 1,
+        "why": "Strings concatenate! Adding '10' and '20' yields '1020'."
+      },
+      {
+        "q": "Which variable name is INVALID in Python?",
+        "options": [
+          "_score",
+          "user_2",
+          "2nd_player",
+          "myVar"
+        ],
+        "answer": 2,
+        "why": "Variable names cannot start with a number."
+      },
+      {
+        "q": "What data type does `type(3.14)` return?",
+        "options": [
+          "int",
+          "float",
+          "double",
+          "decimal"
+        ],
+        "answer": 1,
+        "why": "Numbers with decimal points are float objects in Python."
+      }
+    ]
+  },
+  {
+    "id": "ch2_conditionals",
+    "title": "2. Conditionals & Logic",
+    "icon": "⚖️",
+    "questions": [
+      {
+        "q": "What is the output?\n```python\na = True\nb = False\nprint(not a or b)\n```",
+        "options": [
+          "True",
+          "False",
+          "None",
+          "SyntaxError"
+        ],
+        "answer": 1,
+        "why": "`not True` is False, and `False or False` is False."
+      },
+      {
+        "q": "What is the correct syntax for 'else if' in Python?",
+        "options": [
+          "elseif",
+          "else if",
+          "elif",
+          "elsif"
+        ],
+        "answer": 2,
+        "why": "Python strictly uses `elif`."
+      }
+    ]
+  },
+  {
+    "id": "ch3_loops",
+    "title": "3. Loops & Iteration",
+    "icon": "🔁",
+    "questions": [
+      {
+        "q": "How many numbers does `range(2, 6)` generate?",
+        "options": [
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "answer": 1,
+        "why": "It yields [2, 3, 4, 5], which is exactly 4 elements."
+      },
+      {
+        "q": "Which keyword immediately exits an entire loop?",
+        "options": [
+          "break",
+          "pass",
+          "continue",
+          "skip"
+        ],
+        "answer": 0,
+        "why": "`break` terminates the enclosing loop."
+      }
+    ]
+  }
+]
