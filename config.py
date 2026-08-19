@@ -22,9 +22,6 @@ GAME_BOT_TOKEN = os.getenv("GAME_BOT_TOKEN")
 # Quiz Bot token (falls back to GAME_BOT_TOKEN if not specified)
 QUIZ_BOT_TOKEN = os.getenv("QUIZ_BOT_TOKEN", GAME_BOT_TOKEN)
 
-# Flappy Game token (falls back to GAME_BOT_TOKEN if not specified)
-FLAPPY_GAME_TOKEN = os.getenv("FLAPPY_GAME_TOKEN", GAME_BOT_TOKEN)
-
 missing = [
     key for key, val in {
         "PYBOT_TOKEN": PYBOT_TOKEN,
