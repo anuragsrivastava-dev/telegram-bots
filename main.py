@@ -56,10 +56,8 @@ async def main():
         await bot_app.start()
         await bot_app.updater.start_polling(
             drop_pending_updates=True,
-            read_timeout=30.0,
-            write_timeout=30.0,
-            connect_timeout=30.0,
-            pool_timeout=30.0,
+            timeout=20,
+            bootstrap_retries=5,
         )
         await asyncio.sleep(0.5)
 
