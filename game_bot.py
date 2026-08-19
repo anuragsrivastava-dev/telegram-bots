@@ -18,20 +18,24 @@ from telegram.ext import (
 )
 
 GAMES = {
+    "chess": {
+        "url": "https://anu69-web.github.io/telegram-games/chess/",
+        "title": "Couple Chess Duel",
+    },
     "snakes": {
-        "url": "https://anu69-web.github.io/heart-catcher-game/snakes/",
+        "url": "https://anu69-web.github.io/telegram-games/snakes/",
         "title": "Snakes & Ladders Clash",
     },
     "uno": {
-        "url": "https://anu69-web.github.io/heart-catcher-game/uno/",
+        "url": "https://anu69-web.github.io/telegram-games/uno/",
         "title": "Couple UNO Duel",
     },
     "paddle": {
-        "url": "https://anu69-web.github.io/heart-catcher-game/paddle/",
+        "url": "https://anu69-web.github.io/telegram-games/paddle/",
         "title": "Couple Paddle Clash",
     },
     "heart_catcher": {
-        "url": "https://anu69-web.github.io/heart-catcher-game/",
+        "url": "https://anu69-web.github.io/telegram-games/heart-catcher/",
         "title": "Heart Catcher",
     },
 }
@@ -40,15 +44,24 @@ GAMES = {
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "🎮 *Game Bot Hub:*\n\n"
+        "• `/chess` or `.chess` — Play 2-Player Couple Chess Duel\n"
         "• `/snakes` or `.snakes` — Play Snakes & Ladders Duel (100 Tiles)\n"
         "• `/uno` or `.uno` — Play Couple UNO Duel\n"
         "• `/paddle` or `.paddle` — Play Couple Paddle Clash\n"
         "• `/catch` or `.catch` — Play Solo Heart Catcher\n"
-        "• `/scores` or `.scores` — View Leaderboard\n"
+        "• `/scores` or `.scores` — View chat leaderboard\n"
         "• `/help` — Show this guide\n\n"
         "💡 *Inline Game:* Type `@meoww_gamebot` in any chat to share!"
     )
     await update.message.reply_text(help_text, parse_mode="Markdown")
+
+
+async def play_chess(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    await context.bot.send_game(
+        chat_id=chat_id,
+        game_short_name="chess",
+    )
 
 
 async def play_snakes(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -109,10 +122,11 @@ async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def inline_game_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     results = [
-        InlineQueryResultGame(id="1", game_short_name="snakes"),
-        InlineQueryResultGame(id="2", game_short_name="uno"),
-        InlineQueryResultGame(id="3", game_short_name="paddle"),
-        InlineQueryResultGame(id="4", game_short_name="heart_catcher"),
+        InlineQueryResultGame(id="1", game_short_name="chess"),
+        InlineQueryResultGame(id="2", game_short_name="snakes"),
+        InlineQueryResultGame(id="3", game_short_name="uno"),
+        InlineQueryResultGame(id="4", game_short_name="paddle"),
+        InlineQueryResultGame(id="5", game_short_name="heart_catcher"),
     ]
     await update.inline_query.answer(results, cache_time=0)
 
@@ -143,7 +157,9 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = update.message.text.strip().lower()
-    if text.startswith((".snakes", ".snake", ".ladder", ".sl")):
+    if text.startswith((".chess", ".checkmate")):
+        await play_chess(update, context)
+    elif text.startswith((".snakes", ".snake", ".ladder", ".sl")):
         await play_snakes(update, context)
     elif text.startswith((".uno", ".card")):
         await play_uno(update, context)
@@ -159,6 +175,7 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def set_commands(application):
     await application.bot.set_my_commands([
+        BotCommand("chess", "Play Couple Chess Duel (2P)"),
         BotCommand("snakes", "Play Snakes & Ladders Clash (2P)"),
         BotCommand("uno", "Play Couple UNO Duel (2P)"),
         BotCommand("paddle", "Play Couple Paddle Clash (2P)"),
@@ -178,6 +195,7 @@ request = HTTPXRequest(
 app = ApplicationBuilder().token(GAME_BOT_TOKEN).request(request).post_init(set_commands).build()
 
 app.add_handler(CommandHandler(["start", "help"], help_command))
+app.add_handler(CommandHandler(["chess"], play_chess))
 app.add_handler(CommandHandler(["snakes", "snake", "ladder"], play_snakes))
 app.add_handler(CommandHandler(["uno", "cards"], play_uno))
 app.add_handler(CommandHandler(["paddle", "duel"], play_paddle))
