@@ -31,15 +31,106 @@ from telegram.ext import (
     filters,
 )
 from groq import AsyncGroq
-from config import MEOW_TOKEN, GROQ_API_KEY
+from config import MEOW_TOKEN, GROQ_API_KEY, ADMIN_USER_ID
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-REMINDER_CHAT_ID = 8630258661
+REMINDER_CHAT_ID = ADMIN_USER_ID or 8630258661
 REMINDER_FILE = os.path.join(BASE_DIR, "wisp_reminder.json")
 REMINDER_DAYS = 28
 
 CARD_WEBAPP_URL = "https://anu69-web.github.io/card/"
 TELEGRAM_CARD_LINK = "https://t.me/meowanuBot/card"
+CARD_SCHEDULES_FILE = os.path.join(BASE_DIR, "card_schedules.json")
+
+
+def load_card_schedules() -> list:
+    if not os.path.exists(CARD_SCHEDULES_FILE):
+        return []
+    try:
+        with open(CARD_SCHEDULES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_card_schedules(schedules: list):
+    try:
+        with open(CARD_SCHEDULES_FILE, "w", encoding="utf-8") as f:
+            json.dump(schedules, f, indent=2)
+    except Exception as e:
+        print(f"Error saving card schedules: {e}")
+
+
+def parse_schedule_timestamp(date_str: str, time_str: str, tz_name: str = "IRST") -> tuple[float, str]:
+    """Parses date, time, and timezone into UTC timestamp."""
+    tz_clean = tz_name.upper().strip()
+    if tz_clean in ["IRST", "IRAN", "TEHRAN"]:
+        tz_offset_hours = 3.5
+        display_tz = "IRST (UTC+3:30)"
+    elif tz_clean in ["IST", "INDIA", "KOLKATA"]:
+        tz_offset_hours = 5.5
+        display_tz = "IST (UTC+5:30)"
+    elif tz_clean in ["UTC", "GMT"]:
+        tz_offset_hours = 0.0
+        display_tz = "UTC"
+    else:
+        tz_offset_hours = 3.5
+        display_tz = f"{tz_clean} (Defaulted to IRST +3:30)"
+
+    dt_local = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+    dt_utc = dt_local - timedelta(hours=tz_offset_hours)
+    return dt_utc.timestamp(), display_tz
+
+
+async def check_and_deliver_scheduled_cards(context: ContextTypes.DEFAULT_TYPE):
+    schedules = load_card_schedules()
+    now_ts = datetime.utcnow().timestamp()
+    updated = False
+
+    for item in schedules:
+        if item.get("status") == "pending" and now_ts >= item.get("deliver_timestamp", 0):
+            target_chat_id = item.get("target_chat_id")
+            caption = (
+                "🌹 *A Special Anniversary Surprise for You!* 💌\n\n"
+                "Tap below to open your personalized interactive anniversary card with music, memories, and photos ✨\n\n"
+                "📱 *Direct Link:* [t.me/meowanuBot/card](https://t.me/meowanuBot/card)"
+            )
+
+            try:
+                await context.bot.send_message(
+                    chat_id=target_chat_id,
+                    text=caption,
+                    reply_markup=get_card_keyboard(is_group=False, user_id=target_chat_id),
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+                item["status"] = "delivered"
+                item["delivered_at_utc"] = datetime.utcnow().isoformat()
+                updated = True
+
+                # Notify Admin
+                if ADMIN_USER_ID:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_USER_ID,
+                        text=(
+                            f"🎉 *Anniversary Card Delivered!* 💌\n\n"
+                            f"👤 *Recipient ID:* `{target_chat_id}`\n"
+                            f"⏰ *Scheduled Time:* {item.get('date_str')} {item.get('time_str')} ({item.get('display_tz')})\n"
+                            f"✅ *Status:* Successfully sent to chat!"
+                        ),
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
+            except Exception as e:
+                item["status"] = f"failed: {str(e)}"
+                updated = True
+                if ADMIN_USER_ID:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_USER_ID,
+                        text=f"⚠️ *Failed to deliver scheduled card to* `{target_chat_id}`:\n`{e}`",
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
+
+    if updated:
+        save_card_schedules(schedules)
 
 
 def get_card_keyboard(is_group: bool = False, user_id: int = None):
@@ -305,16 +396,154 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🧹 Conversation history cleared!")
 
 
+async def schedule_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id if update.effective_user else 0
+    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use this command.")
+        return
+
+    # Usage: /schedulecard <target_user_id> <YYYY-MM-DD> <HH:MM> [timezone: IRST/IST/UTC]
+    args = context.args or []
+    if len(args) < 3:
+        usage_msg = (
+            "📅 *How to Schedule Anniversary Card Delivery:*\n\n"
+            "• `/schedulecard <user_id> <YYYY-MM-DD> <HH:MM> [IRST/IST/UTC]`\n\n"
+            "*Examples:*\n"
+            "• `/schedulecard 123456789 2026-09-23 00:01 IRST` _(Iran Time UTC+3:30)_\n"
+            "• `/schedulecard 123456789 2026-09-23 00:01 IST` _(India Time UTC+5:30)_\n\n"
+            "• `/schedules` — View all pending deliveries\n"
+            "• `/cancelschedule <id>` — Cancel a delivery"
+        )
+        await update.message.reply_text(usage_msg, parse_mode=ParseMode.MARKDOWN)
+        return
+
+    target_id_str, date_str, time_str = args[0], args[1], args[2]
+    tz_str = args[3] if len(args) > 3 else "IRST"
+
+    try:
+        target_chat_id = int(target_id_str)
+    except ValueError:
+        await update.message.reply_text("❌ Invalid user ID. Please provide a numeric Telegram user ID.")
+        return
+
+    try:
+        deliver_ts, display_tz = parse_schedule_timestamp(date_str, time_str, tz_str)
+    except Exception as e:
+        await update.message.reply_text(f"❌ Invalid date/time format. Use `YYYY-MM-DD HH:MM` (e.g. `2026-09-23 00:01`). Error: {e}")
+        return
+
+    now_ts = datetime.utcnow().timestamp()
+    if deliver_ts <= now_ts:
+        await update.message.reply_text("⚠️ The scheduled time is in the past! Please provide a future date and time.")
+        return
+
+    schedule_id = str(int(now_ts * 1000))[-6:]
+    schedules = load_card_schedules()
+    new_entry = {
+        "id": schedule_id,
+        "target_chat_id": target_chat_id,
+        "date_str": date_str,
+        "time_str": time_str,
+        "timezone": tz_str,
+        "display_tz": display_tz,
+        "deliver_timestamp": deliver_ts,
+        "status": "pending",
+        "created_at_utc": datetime.utcnow().isoformat()
+    }
+    schedules.append(new_entry)
+    save_card_schedules(schedules)
+
+    diff_seconds = int(deliver_ts - now_ts)
+    days, rem = divmod(diff_seconds, 86400)
+    hours, rem_m = divmod(rem, 3600)
+    minutes = rem_m // 60
+
+    confirm_text = (
+        f"✅ *Card Delivery Scheduled Successfully!* 💌\n\n"
+        f"🆔 *Schedule ID:* `{schedule_id}`\n"
+        f"👤 *Target User ID:* `{target_chat_id}`\n"
+        f"📅 *Delivery Time:* `{date_str} {time_str}` ({display_tz})\n"
+        f"⏳ *Countdown:* {days}d {hours}h {minutes}m from now\n\n"
+        f"_The bot will automatically deliver the surprise card to this user at the scheduled moment!_"
+    )
+    await update.message.reply_text(confirm_text, parse_mode=ParseMode.MARKDOWN)
+
+
+async def list_schedules_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id if update.effective_user else 0
+    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
+        return
+
+    schedules = load_card_schedules()
+    pending = [s for s in schedules if s.get("status") == "pending"]
+
+    if not pending:
+        await update.message.reply_text("📭 No pending scheduled card deliveries.")
+        return
+
+    now_ts = datetime.utcnow().timestamp()
+    lines = ["📅 *Pending Anniversary Card Deliveries:*\n"]
+    for s in pending:
+        rem_sec = max(0, int(s.get("deliver_timestamp", 0) - now_ts))
+        d, rem = divmod(rem_sec, 86400)
+        h, rem_m = divmod(rem, 3600)
+        m = rem_m // 60
+        lines.append(
+            f"• *ID:* `{s.get('id')}` | 👤 `{s.get('target_chat_id')}`\n"
+            f"  ⏰ `{s.get('date_str')} {s.get('time_str')}` ({s.get('display_tz')})\n"
+            f"  ⏳ In {d}d {h}h {m}m\n"
+        )
+    lines.append("\n_Use `/cancelschedule <id>` to cancel._")
+    await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+
+
+async def cancel_schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id if update.effective_user else 0
+    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
+        return
+
+    args = context.args or []
+    if not args:
+        await update.message.reply_text("Usage: `/cancelschedule <id>`", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    target_id = args[0].strip()
+    schedules = load_card_schedules()
+    found = False
+    for s in schedules:
+        if s.get("id") == target_id and s.get("status") == "pending":
+            s["status"] = "cancelled"
+            found = True
+            break
+
+    if found:
+        save_card_schedules(schedules)
+        await update.message.reply_text(f"🗑️ Schedule `{target_id}` has been cancelled.", parse_mode=ParseMode.MARKDOWN)
+    else:
+        await update.message.reply_text(f"❌ Pending schedule `{target_id}` not found.", parse_mode=ParseMode.MARKDOWN)
+
+
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message is None or not update.message.text:
         return
 
     text = update.message.text.strip()
 
-    # Secret triggers for Anniversary Card and Love Hearts
+    # Secret triggers for Anniversary Card, Love Hearts, and Card Scheduling
     clean_text = text.lower()
     if clean_text.startswith(".sendcard"):
         await send_card_command(update, context)
+        return
+    elif clean_text.startswith(".schedulecard"):
+        context.args = text.split()[1:]
+        await schedule_card_command(update, context)
+        return
+    elif clean_text.startswith((".schedules", ".listschedules")):
+        await list_schedules_command(update, context)
+        return
+    elif clean_text.startswith(".cancelschedule"):
+        context.args = text.split()[1:]
+        await cancel_schedule_command(update, context)
         return
     elif clean_text.startswith((".sendhearts", ".hearts", ".heart", ".sendheart")):
         await send_hearts_response(update, context)
@@ -505,10 +734,19 @@ app.job_queue.run_repeating(
     first=10,
 )
 
+app.job_queue.run_repeating(
+    check_and_deliver_scheduled_cards,
+    interval=30,
+    first=5,
+)
+
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("clear", clear_command))
 app.add_handler(CommandHandler("sendcard", send_card_command))
+app.add_handler(CommandHandler("schedulecard", schedule_card_command))
+app.add_handler(CommandHandler(["schedules", "listschedules"], list_schedules_command))
+app.add_handler(CommandHandler("cancelschedule", cancel_schedule_command))
 app.add_handler(CommandHandler(["hearts", "sendhearts"], send_hearts_response))
 
 for cmd in COMMAND_PROMPTS:
