@@ -23,12 +23,14 @@ from config import PYBOT_TOKEN
 from runner import PythonSession
 
 WEBAPP_URL = "https://anu69-web.github.io/python-console/"
+TELEGRAM_WEBAPP_LINK = "https://t.me/py_runbot/console"
 chat_sessions: dict[int, dict] = {}
 
 
 def get_console_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=WEBAPP_URL))]
+        [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [InlineKeyboardButton("🔗 Share App (t.me/py_runbot/console)", url=f"https://t.me/share/url?url={TELEGRAM_WEBAPP_LINK}&text=Try%20Python%20Console%20on%20Telegram!")]
     ])
 
 
@@ -39,6 +41,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• `/run <code>` or `.run` — Execute multi-line Python code in chat\n"
         "• `/stop` or `.stop` — Force stop the current executing script\n"
         "• `/help` — Show this guide\n\n"
+        "📱 *Direct Web App:* [t.me/py_runbot/console](https://t.me/py_runbot/console)\n\n"
         "*Quick Run Example:*\n"
         "```python\n"
         "/run\n"
@@ -56,7 +59,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def console_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "⚡ *Python Console (Web IDE)*\n\n"
-        "Click below to launch the full-featured interactive compiler with real-time output, auto-indentation, and autocompletion:",
+        "Click below to launch the full-featured interactive compiler with real-time output, auto-indentation, and autocompletion:\n\n"
+        "🔗 *Direct Link:* [t.me/py_runbot/console](https://t.me/py_runbot/console)",
         reply_markup=get_console_keyboard(),
         parse_mode="Markdown"
     )
