@@ -42,7 +42,8 @@ CARD_WEBAPP_URL = "https://anu69-web.github.io/card/"
 TELEGRAM_CARD_LINK = "https://t.me/meowanuBot/card"
 
 
-def get_card_keyboard(is_group: bool = False):
+def get_card_keyboard(is_group: bool = False, user_id: int = None):
+    url = f"{CARD_WEBAPP_URL}?user_id={user_id}" if user_id else CARD_WEBAPP_URL
     if is_group:
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("💌 Open Anniversary Card", url=TELEGRAM_CARD_LINK)],
@@ -50,7 +51,7 @@ def get_card_keyboard(is_group: bool = False):
         ])
     else:
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("💌 Open Anniversary Card", web_app=WebAppInfo(url=CARD_WEBAPP_URL))],
+            [InlineKeyboardButton("💌 Open Anniversary Card", web_app=WebAppInfo(url=url))],
             [InlineKeyboardButton("🔗 Share Card (t.me/meowanuBot/card)", url=f"https://t.me/share/url?url={TELEGRAM_CARD_LINK}&text=A%20special%20anniversary%20card%20for%20you%20%E2%9D%A4%EF%B8%8F")]
         ])
 
@@ -215,13 +216,48 @@ User message:
 # Handlers
 # ==========================
 
+async def send_hearts_response(update: Update, context: ContextTypes.DEFAULT_TYPE, recipient_id: int = None):
+    target_chat_id = recipient_id or (update.effective_chat.id if update.effective_chat else None)
+    if not target_chat_id:
+        return
+    
+    hearts_msg = (
+        "💖💖💖💖💖💖💖💖💖💖\n"
+        "🌹 *A shower of love sent just for you!* 💌\n"
+        "💕❤️💓💗💖💕❤️💓💗💖\n\n"
+        "_\"Distance means so little when someone means so much.\"_ ✨\n\n"
+        "Happy Anniversary, My Love! 💍"
+    )
+    await context.bot.send_message(
+        chat_id=target_chat_id,
+        text=hearts_msg,
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.web_app_data:
+        return
+    try:
+        data = json.loads(update.message.web_app_data.data)
+    except Exception:
+        data = {}
+
+    user_id = data.get("user_id") or (update.effective_user.id if update.effective_user else None)
+    await send_hearts_response(update, context, recipient_id=user_id)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.args and "hearts" in context.args[0].lower():
+        await send_hearts_response(update, context)
+        return
     await update.message.reply_text("🐾 Meow is awake! Use /help to see everything I can do.")
 
 
 async def send_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_obj = update.effective_chat
     is_group = bool(chat_obj and chat_obj.type in ["group", "supergroup", "channel"])
+    user_id = update.effective_user.id if update.effective_user else None
     
     caption = (
         "🌹 *A Special Anniversary Surprise for You!* 💌\n\n"
@@ -230,7 +266,7 @@ async def send_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(
         caption,
-        reply_markup=get_card_keyboard(is_group),
+        reply_markup=get_card_keyboard(is_group, user_id=user_id),
         parse_mode=ParseMode.MARKDOWN,
     )
 
@@ -273,10 +309,13 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = update.message.text.strip()
 
-    # Secret trigger for Anniversary Card WebApp
+    # Secret triggers for Anniversary Card and Love Hearts
     clean_text = text.lower()
     if clean_text.startswith(".sendcard"):
         await send_card_command(update, context)
+        return
+    elif clean_text.startswith((".sendhearts", ".hearts", ".heart", ".sendheart")):
+        await send_hearts_response(update, context)
         return
     elif clean_text.startswith((".help", ".start")):
         await help_command(update, context)
@@ -468,9 +507,11 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("clear", clear_command))
 app.add_handler(CommandHandler("sendcard", send_card_command))
+app.add_handler(CommandHandler(["hearts", "sendhearts"], send_hearts_response))
 
 for cmd in COMMAND_PROMPTS:
     app.add_handler(CommandHandler(cmd, command_handler))
 
+app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data_handler))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 app.add_handler(InlineQueryHandler(inline_query))
