@@ -42,6 +42,10 @@ GAMES = {
         "url": "https://anu69-web.github.io/telegram-games/flappy-bird/",
         "title": "Flappy Bird Odyssey",
     },
+    "tower": {
+        "url": "https://anu69-web.github.io/telegram-games/tower-builder/",
+        "title": "Tower Builder Deluxe",
+    },
 }
 
 
@@ -54,6 +58,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• `/paddle` or `.paddle` — Play Couple Paddle Clash\n"
         "• `/catch` or `.catch` — Play Solo Heart Catcher\n"
         "• `/flappy` or `.flappy` — Play Flappy Bird Odyssey (Solo Arcade)\n"
+        "• `/tower` or `.tower` — Play Tower Builder Deluxe (Solo Stacker)\n"
         "• `/scores` or `.scores` — View chat leaderboard\n"
         "• `/help` — Show this guide\n\n"
         "💡 *Inline Game:* Type `@meoww_gamebot` in any chat to share!"
@@ -124,6 +129,16 @@ async def play_flappy(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_last_game_msg[chat_id] = msg.message_id
 
 
+async def play_tower(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    msg = await context.bot.send_game(
+        chat_id=chat_id,
+        game_short_name="tower",
+    )
+    if msg:
+        chat_last_game_msg[chat_id] = msg.message_id
+
+
 async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     game_key = query.game_short_name or query.data
@@ -162,6 +177,7 @@ async def inline_game_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineQueryResultGame(id="4", game_short_name="paddle"),
         InlineQueryResultGame(id="5", game_short_name="heart_catcher"),
         InlineQueryResultGame(id="6", game_short_name="flappy"),
+        InlineQueryResultGame(id="7", game_short_name="tower"),
     ]
     await update.inline_query.answer(results, cache_time=0)
 
@@ -178,7 +194,7 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     if not target_msg_id:
         await update.message.reply_text(
-            "🏆 *Game Leaderboard:*\n\nScores are updated directly on each game card in chat!\n\nTo fetch text leaderboard, reply to a game card with `/scores` or launch a game (`/chess`, `/snakes`, `/uno`, `/paddle`, `/catch`, `/flappy`).",
+            "🏆 *Game Leaderboard:*\n\nScores are updated directly on each game card in chat!\n\nTo fetch text leaderboard, reply to a game card with `/scores` or launch a game (`/chess`, `/snakes`, `/uno`, `/paddle`, `/catch`, `/flappy`, `/tower`).",
             parse_mode="Markdown"
         )
         return
@@ -218,6 +234,8 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await play_catcher(update, context)
     elif text.startswith((".flappy", ".bird", ".fly")):
         await play_flappy(update, context)
+    elif text.startswith((".tower", ".stack", ".build")):
+        await play_tower(update, context)
     elif text.startswith((".scores", ".top", ".board")):
         await leaderboard_command(update, context)
     elif text.startswith((".help", ".start")):
@@ -232,6 +250,7 @@ async def set_commands(application):
         BotCommand("paddle", "Play Couple Paddle Clash (2P)"),
         BotCommand("catch", "Play Solo Heart Catcher"),
         BotCommand("flappy", "Play Flappy Bird Odyssey (Solo Arcade)"),
+        BotCommand("tower", "Play Tower Builder Deluxe (Solo Stacker)"),
         BotCommand("scores", "View Leaderboard"),
         BotCommand("help", "Show game help"),
     ])
@@ -254,6 +273,7 @@ app.add_handler(CommandHandler(["uno", "cards"], play_uno))
 app.add_handler(CommandHandler(["paddle", "duel"], play_paddle))
 app.add_handler(CommandHandler(["catch", "heart"], play_catcher))
 app.add_handler(CommandHandler(["flappy", "bird", "fly"], play_flappy))
+app.add_handler(CommandHandler(["tower", "stack", "build"], play_tower))
 app.add_handler(CommandHandler(["scores", "top"], leaderboard_command))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_dot_prefix))
 app.add_handler(CallbackQueryHandler(game_callback))
