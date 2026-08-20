@@ -1,4 +1,6 @@
 import logging
+import os
+import sqlite3
 from config import GAME_BOT_TOKEN
 
 from telegram import (
@@ -17,44 +19,148 @@ from telegram.ext import (
     filters,
 )
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "game_scores.db")
+
+# =============================================================================
+# Database Layer: Global Persistent Game Scores
+# =============================================================================
+def get_db():
+    return sqlite3.connect(DB_PATH)
+
+
+def init_game_db():
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS game_scores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                chat_id INTEGER NOT NULL,
+                user_name TEXT NOT NULL,
+                game_key TEXT NOT NULL,
+                high_score INTEGER NOT NULL DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, chat_id, game_key)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS game_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER NOT NULL,
+                game_key TEXT NOT NULL,
+                message_id INTEGER NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(chat_id, game_key)
+            )
+        """)
+        conn.commit()
+
+
+init_game_db()
+
+
+def save_or_update_score(user_id: int, chat_id: int, user_name: str, game_key: str, score: int):
+    if not user_id:
+        return
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO game_scores (user_id, chat_id, user_name, game_key, high_score, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id, chat_id, game_key) DO UPDATE SET
+                high_score = MAX(game_scores.high_score, excluded.high_score),
+                user_name = excluded.user_name,
+                updated_at = CURRENT_TIMESTAMP
+        """, (user_id, chat_id, user_name, game_key, max(0, score)))
+        conn.commit()
+
+
+def record_game_message(chat_id: int, game_key: str, message_id: int):
+    if not chat_id or not message_id:
+        return
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO game_messages (chat_id, game_key, message_id, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(chat_id, game_key) DO UPDATE SET
+                message_id = excluded.message_id,
+                updated_at = CURRENT_TIMESTAMP
+        """, (chat_id, game_key, message_id))
+        conn.commit()
+
+
+# =============================================================================
+# Game Definitions
+# =============================================================================
 GAMES = {
     "chess": {
         "url": "https://anu69-web.github.io/telegram-games/chess/",
-        "title": "Couple Chess Duel",
+        "title": "Chess Duel",
+        "emoji": "♟️",
+        "type": "2P",
+        "unit": "wins",
     },
     "snakes": {
         "url": "https://anu69-web.github.io/telegram-games/snakes/",
-        "title": "Snakes & Ladders Clash",
+        "title": "Snakes Clash",
+        "emoji": "🐍",
+        "type": "2P",
+        "unit": "wins",
     },
     "uno": {
         "url": "https://anu69-web.github.io/telegram-games/uno/",
-        "title": "Couple UNO Duel",
+        "title": "UNO Duel",
+        "emoji": "🃏",
+        "type": "2P",
+        "unit": "wins",
     },
     "paddle": {
         "url": "https://anu69-web.github.io/telegram-games/paddle/",
-        "title": "Couple Paddle Clash",
-    },
-    "heart_catcher": {
-        "url": "https://anu69-web.github.io/telegram-games/heart-catcher/",
-        "title": "Heart Catcher",
-    },
-    "flappy": {
-        "url": "https://anu69-web.github.io/telegram-games/flappy-bird/",
-        "title": "Flappy Bird Odyssey",
-    },
-    "tower": {
-        "url": "https://anu69-web.github.io/telegram-games/tower-builder/",
-        "title": "Tower Builder Deluxe",
-    },
-    "helix": {
-        "url": "https://anu69-web.github.io/telegram-games/helix-jump/",
-        "title": "Helix Jump",
+        "title": "Paddle Clash",
+        "emoji": "🏓",
+        "type": "2P",
+        "unit": "wins",
     },
     "frog": {
         "url": "https://anu69-web.github.io/telegram-games/frog-fight/",
         "title": "Frog Fight",
+        "emoji": "🐸",
+        "type": "2P",
+        "unit": "wins",
+    },
+    "flappy": {
+        "url": "https://anu69-web.github.io/telegram-games/flappy-bird/",
+        "title": "Flappy Bird",
+        "emoji": "🐦",
+        "type": "Solo",
+        "unit": "pts",
+    },
+    "tower": {
+        "url": "https://anu69-web.github.io/telegram-games/tower-builder/",
+        "title": "Tower Builder",
+        "emoji": "🏗️",
+        "type": "Solo",
+        "unit": "flr",
+    },
+    "helix": {
+        "url": "https://anu69-web.github.io/telegram-games/helix-jump/",
+        "title": "Helix Jump",
+        "emoji": "🌀",
+        "type": "Solo",
+        "unit": "pts",
+    },
+    "heart_catcher": {
+        "url": "https://anu69-web.github.io/telegram-games/heart-catcher/",
+        "title": "Heart Catcher",
+        "emoji": "💖",
+        "type": "Solo",
+        "unit": "pts",
     },
 }
+
+GAME_ORDER = ["chess", "snakes", "uno", "paddle", "frog", "flappy", "tower", "helix", "heart_catcher"]
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -72,104 +178,77 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• `/helix` or `.helix` — Helix Jump 3D\n"
         "• `/catch` or `.catch` — Solo Heart Catcher\n\n"
         "📊 *Leaderboard & Help:*\n"
-        "• `/scores` or `.scores` — View chat leaderboard\n"
+        "• `/scores` or `.scores` — View all-games scoreboard chart\n"
         "• `/help` — Show this guide\n\n"
         "💡 *Inline Game:* Type `@meoww_gamebot` in any chat to share!"
     )
     await update.message.reply_text(help_text, parse_mode="Markdown")
 
 
-chat_last_game_msg: dict[int, int] = {}
-
-
+# =============================================================================
+# Game Launch Handlers
+# =============================================================================
 async def play_chess(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="chess",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="chess")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "chess", msg.message_id)
 
 
 async def play_snakes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="snakes",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="snakes")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "snakes", msg.message_id)
 
 
 async def play_uno(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="uno",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="uno")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "uno", msg.message_id)
 
 
 async def play_paddle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="paddle",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="paddle")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "paddle", msg.message_id)
 
 
 async def play_catcher(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="heart_catcher",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="heart_catcher")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "heart_catcher", msg.message_id)
 
 
 async def play_flappy(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="flappy",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="flappy")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "flappy", msg.message_id)
 
 
 async def play_tower(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="tower",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="tower")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "tower", msg.message_id)
 
 
 async def play_helix(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="helix",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="helix")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "helix", msg.message_id)
 
 
 async def play_frog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    msg = await context.bot.send_game(
-        chat_id=chat_id,
-        game_short_name="frog",
-    )
+    msg = await context.bot.send_game(chat_id=chat_id, game_short_name="frog")
     if msg:
-        chat_last_game_msg[chat_id] = msg.message_id
+        record_game_message(chat_id, "frog", msg.message_id)
 
 
 async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -180,15 +259,17 @@ async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     user_id = query.from_user.id
-    chat_id = query.message.chat_id if query.message else ""
+    user_name = query.from_user.first_name or "Player"
+    chat_id = query.message.chat_id if query.message else 0
     msg_id = query.message.message_id if query.message else ""
     inline_id = query.inline_message_id or ""
 
     if chat_id and msg_id:
-        try:
-            chat_last_game_msg[int(chat_id)] = int(msg_id)
-        except Exception:
-            pass
+        record_game_message(chat_id, game_key, msg_id)
+
+    # Register user in database
+    if chat_id:
+        save_or_update_score(user_id, chat_id, user_name, game_key, 0)
 
     base_url = GAMES[game_key]["url"]
     target_url = (
@@ -219,39 +300,176 @@ async def inline_game_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.inline_query.answer(results, cache_time=0)
 
 
+# =============================================================================
+# Leaderboard Chart Builder
+# =============================================================================
+def format_cell(text: str, width: int, align: str = "left") -> str:
+    s = str(text)
+    if len(s) > width:
+        s = s[:width - 1] + "…"
+    if align == "right":
+        return s.rjust(width)
+    elif align == "center":
+        return s.center(width)
+    return s.ljust(width)
+
+
+def build_leaderboard_chart(scores_by_user_game: dict, user_names: dict, current_user_id: int) -> str:
+    player_ids = list(scores_by_user_game.keys())
+
+    # --- 2-PLAYER COUPLE DUEL COMPARISON CHART ---
+    if len(player_ids) == 2:
+        p1_id, p2_id = player_ids[0], player_ids[1]
+        p1_name = user_names.get(p1_id, "Player 1")[:8]
+        p2_name = user_names.get(p2_id, "Player 2")[:8]
+
+        col1_w = 17
+        col2_w = 8
+        col3_w = 8
+
+        lines = [
+            "🏆 *ALL-GAMES ARCADE LEADERBOARD* 🏆",
+            "```",
+            f"{format_cell('Game Title', col1_w)}│{format_cell(p1_name, col2_w, 'center')}│{format_cell(p2_name, col3_w, 'center')}",
+            f"{'─' * col1_w}┼{'─' * col2_w}┼{'─' * col3_w}"
+        ]
+
+        p1_total = 0
+        p2_total = 0
+
+        for key in GAME_ORDER:
+            info = GAMES[key]
+            s1 = scores_by_user_game[p1_id].get(key, 0)
+            s2 = scores_by_user_game[p2_id].get(key, 0)
+            p1_total += s1
+            p2_total += s2
+
+            # Badges
+            tag1 = " 👑" if (s1 > s2 and s1 > 0) else (" ⭐" if (s1 > 0 and s1 == s2) else "")
+            tag2 = " 👑" if (s2 > s1 and s2 > 0) else (" ⭐" if (s2 > 0 and s1 == s2) else "")
+
+            c1_str = f"{s1}{tag1}" if s1 > 0 else "-"
+            c2_str = f"{s2}{tag2}" if s2 > 0 else "-"
+
+            name_str = f"{info['emoji']} {info['title']}"
+            lines.append(f"{format_cell(name_str, col1_w)}│{format_cell(c1_str, col2_w, 'center')}│{format_cell(c2_str, col3_w, 'center')}")
+
+        lines.append(f"{'─' * col1_w}┼{'─' * col2_w}┼{'─' * col3_w}")
+        t1_badge = " 👑" if p1_total > p2_total else ""
+        t2_badge = " 👑" if p2_total > p1_total else ""
+        lines.append(f"{format_cell('🎖️ TOTAL WINS/PTS', col1_w)}│{format_cell(f'{p1_total}{t1_badge}', col2_w, 'center')}│{format_cell(f'{p2_total}{t2_badge}', col3_w, 'center')}")
+        lines.append("```")
+
+        if p1_total > p2_total:
+            diff = p1_total - p2_total
+            lines.append(f"👑 *Overall Leader:* *{p1_name}* (`+{diff} pts ahead`)")
+        elif p2_total > p1_total:
+            diff = p2_total - p1_total
+            lines.append(f"👑 *Overall Leader:* *{p2_name}* (`+{diff} pts ahead`)")
+        else:
+            lines.append("🤝 *Tied Match:* Both players are perfectly even!")
+
+        return "\n".join(lines)
+
+    # --- SINGLE PLAYER OR MULTI-PLAYER STATS CHART ---
+    target_uid = current_user_id if current_user_id in scores_by_user_game else (player_ids[0] if player_ids else current_user_id)
+    target_name = user_names.get(target_uid, "You")
+    user_scores = scores_by_user_game.get(target_uid, {})
+
+    col1_w = 17
+    col2_w = 6
+    col3_w = 11
+
+    lines = [
+        f"🏆 *ARCADE STATS CHART* 🏆",
+        f"👤 *Player:* `{target_name}` (Global High Scores)\n",
+        "```",
+        f"{format_cell('Game Title', col1_w)}│{format_cell('Mode', col2_w, 'center')}│{format_cell('High Score', col3_w, 'center')}",
+        f"{'─' * col1_w}┼{'─' * col2_w}┼{'─' * col3_w}"
+    ]
+
+    total_score = 0
+    for key in GAME_ORDER:
+        info = GAMES[key]
+        s = user_scores.get(key, 0)
+        total_score += s
+
+        score_text = f"{s} {info['unit']}" if s > 0 else "-"
+        name_str = f"{info['emoji']} {info['title']}"
+        lines.append(f"{format_cell(name_str, col1_w)}│{format_cell(info['type'], col2_w, 'center')}│{format_cell(score_text, col3_w, 'right')}")
+
+    lines.append(f"{'─' * col1_w}┼{'─' * col2_w}┼{'─' * col3_w}")
+    lines.append(f"{format_cell('🎖️ COMBINED TOTAL', col1_w)}│{format_cell('ALL', col2_w, 'center')}│{format_cell(f'{total_score} pts', col3_w, 'right')}")
+    lines.append("```")
+    lines.append("✨ _Scores update automatically whenever you finish a game!_")
+
+    return "\n".join(lines)
+
+
 async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    user_id = update.effective_user.id
+    user = update.effective_user
+    user_id = user.id
+    user_name = user.first_name or "Player"
 
-    target_msg_id = None
-    if update.message and update.message.reply_to_message:
-        target_msg_id = update.message.reply_to_message.message_id
-    elif chat_id in chat_last_game_msg:
-        target_msg_id = chat_last_game_msg[chat_id]
+    # 1. Sync latest high scores from Telegram API for all tracked game messages
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT game_key, message_id FROM game_messages WHERE chat_id = ?", (chat_id,))
+        tracked_msgs = cur.fetchall()
 
-    if not target_msg_id:
-        await update.message.reply_text(
-            "🏆 *Game Leaderboard:*\n\nScores are updated directly on each game card in chat!\n\nTo fetch text leaderboard, reply to a game card with `/scores` or launch a game (`/chess`, `/snakes`, `/uno`, `/paddle`, `/frog`, `/flappy`, `/tower`, `/helix`, `/catch`).",
-            parse_mode="Markdown"
-        )
-        return
+    for g_key, m_id in tracked_msgs:
+        try:
+            tg_scores = await context.bot.get_game_high_scores(
+                user_id=user_id,
+                chat_id=chat_id,
+                message_id=m_id,
+            )
+            if tg_scores:
+                for s in tg_scores:
+                    p_name = s.user.first_name or "Player"
+                    save_or_update_score(s.user.id, chat_id, p_name, g_key, s.score)
+        except Exception:
+            pass
 
-    try:
-        scores = await context.bot.get_game_high_scores(
-            user_id=user_id,
-            chat_id=chat_id,
-            message_id=target_msg_id,
-        )
-        if not scores:
-            await update.message.reply_text("🏆 No match wins logged yet on this game card! Finish a match to set a record.")
-            return
+    # 2. Fetch recorded scores for this chat (or user global fallback)
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT user_id, user_name, game_key, high_score
+            FROM game_scores
+            WHERE chat_id = ?
+        """, (chat_id,))
+        chat_rows = cur.fetchall()
 
-        lines = ["🏆 *Game Card Leaderboard:*\n"]
-        for score_obj in scores:
-            lines.append(f"`#{score_obj.position}` *{score_obj.user.first_name}* — `{score_obj.score}` wins")
-        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
-    except Exception:
-        await update.message.reply_text("🏆 *Scores are live on the game message card above!*\n\nFinish a match to update the scoreboard.")
+    # If no scores exist for chat yet, check global user scores
+    if not chat_rows:
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT user_id, user_name, game_key, MAX(high_score)
+                FROM game_scores
+                WHERE user_id = ?
+                GROUP BY game_key
+            """, (user_id,))
+            chat_rows = [(r[0], r[1], r[2], r[3]) for r in cur.fetchall()]
+
+    scores_by_user_game = {}
+    user_names = {}
+
+    for uid, name, gkey, hscore in chat_rows:
+        if uid not in scores_by_user_game:
+            scores_by_user_game[uid] = {}
+        scores_by_user_game[uid][gkey] = hscore
+        user_names[uid] = name
+
+    # If still empty, initialize current user with 0s
+    if not scores_by_user_game:
+        scores_by_user_game[user_id] = {k: 0 for k in GAME_ORDER}
+        user_names[user_id] = user_name
+
+    chart_msg = build_leaderboard_chart(scores_by_user_game, user_names, user_id)
+    await update.message.reply_text(chart_msg, parse_mode="Markdown")
 
 
 async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -277,7 +495,7 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await play_helix(update, context)
     elif text.startswith((".catch", ".heart")):
         await play_catcher(update, context)
-    elif text.startswith((".scores", ".top", ".board")):
+    elif text.startswith((".scores", ".top", ".board", ".leaderboard")):
         await leaderboard_command(update, context)
     elif text.startswith((".help", ".start")):
         await help_command(update, context)
@@ -296,7 +514,8 @@ async def set_commands(application):
         BotCommand("tower", "Play Tower Builder Deluxe (Solo Stacker)"),
         BotCommand("helix", "Play Helix Jump (3D Ball Arcade)"),
         BotCommand("catch", "Play Solo Heart Catcher"),
-        BotCommand("scores", "View Leaderboard"),
+        # Leaderboard & Help
+        BotCommand("scores", "View All-Games Leaderboard Chart"),
         BotCommand("help", "Show game help"),
     ])
 
@@ -321,7 +540,7 @@ app.add_handler(CommandHandler(["flappy", "bird", "fly"], play_flappy))
 app.add_handler(CommandHandler(["tower", "stack", "build"], play_tower))
 app.add_handler(CommandHandler(["helix", "jump", "drop"], play_helix))
 app.add_handler(CommandHandler(["frog", "fight", "lily"], play_frog))
-app.add_handler(CommandHandler(["scores", "top"], leaderboard_command))
+app.add_handler(CommandHandler(["scores", "top", "leaderboard"], leaderboard_command))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_dot_prefix))
 app.add_handler(CallbackQueryHandler(game_callback))
 app.add_handler(InlineQueryHandler(inline_game_query))
