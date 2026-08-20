@@ -32,21 +32,30 @@ TELEGRAM_WEBAPP_LINK = "https://t.me/py_runbot/console"
 chat_sessions: dict[int, dict] = {}
 
 
-def get_console_keyboard():
+def get_console_url(chat_id: int = 0) -> str:
+    if chat_id:
+        return f"{WEBAPP_URL}?chat_id={chat_id}&token={PYBOT_TOKEN}"
+    return WEBAPP_URL
+
+
+def get_console_keyboard(chat_id: int = 0):
+    url = get_console_url(chat_id)
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=url))],
         [InlineKeyboardButton("🔗 Share App (t.me/py_runbot/console)", url=f"https://t.me/share/url?url={TELEGRAM_WEBAPP_LINK}&text=Try%20Python%20Console%20on%20Telegram!")]
     ])
 
 
-def get_reply_keyboard():
+def get_reply_keyboard(chat_id: int = 0):
+    url = get_console_url(chat_id)
     return ReplyKeyboardMarkup(
-        [[KeyboardButton("💻 Open Python Console", web_app=WebAppInfo(url=WEBAPP_URL))]],
+        [[KeyboardButton("💻 Open Python Console", web_app=WebAppInfo(url=url))]],
         resize_keyboard=True
     )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id if update.effective_chat else 0
     help_text = (
         "🐍 *Python Code Runner & Console:*\n\n"
         "• `/console` or `.console` — Open interactive Web IDE with autocomplete\n"
@@ -63,22 +72,24 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(
         help_text,
-        reply_markup=get_console_keyboard(),
+        reply_markup=get_console_keyboard(chat_id),
         parse_mode="Markdown"
     )
 
 
 async def console_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id if update.effective_chat else 0
     await update.message.reply_text(
         "⚡ *Python Console (Web IDE)*\n\n"
         "Click below to launch the full-featured interactive compiler with real-time output, auto-indentation, and autocompletion:\n\n"
         "🔗 *Direct Link:* [t.me/py_runbot/console](https://t.me/py_runbot/console)",
-        reply_markup=get_console_keyboard(),
+        reply_markup=get_console_keyboard(chat_id),
         parse_mode="Markdown"
     )
 
 
 async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.inline_query.from_user.id if update.inline_query and update.inline_query.from_user else 0
     results = [
         InlineQueryResultArticle(
             id="python_console_app",
@@ -90,7 +101,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                 "📱 *Direct Link:* [t.me/py_runbot/console](https://t.me/py_runbot/console)",
                 parse_mode="Markdown"
             ),
-            reply_markup=get_console_keyboard()
+            reply_markup=get_console_keyboard(user_id)
         )
     ]
     await update.inline_query.answer(results, cache_time=1)
@@ -163,7 +174,7 @@ async def run(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not code:
         await update.message.reply_text(
             "Usage:\n\n/run\nprint('Hello World')",
-            reply_markup=get_console_keyboard()
+            reply_markup=get_console_keyboard(chat_id)
         )
         return
 
