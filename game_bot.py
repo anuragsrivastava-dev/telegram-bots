@@ -60,15 +60,18 @@ GAMES = {
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "🎮 *Game Bot Hub:*\n\n"
-        "• `/chess` or `.chess` — Play 2-Player Couple Chess Duel\n"
-        "• `/snakes` or `.snakes` — Play Snakes & Ladders Duel (100 Tiles)\n"
-        "• `/uno` or `.uno` — Play Couple UNO Duel\n"
-        "• `/paddle` or `.paddle` — Play Couple Paddle Clash\n"
-        "• `/catch` or `.catch` — Play Solo Heart Catcher\n"
-        "• `/flappy` or `.flappy` — Play Flappy Bird Odyssey (Solo Arcade)\n"
-        "• `/tower` or `.tower` — Play Tower Builder Deluxe (Solo Stacker)\n"
-        "• `/helix` or `.helix` — Play Helix Jump (3D Ball Arcade)\n"
-        "• `/frog` or `.frog` — Play Frog Fight (Lily Pad Clash 2P/Solo)\n"
+        "👥 *Multiplayer 2-Player Games:*\n"
+        "• `/chess` or `.chess` — Couple Chess Duel (2P)\n"
+        "• `/snakes` or `.snakes` — Snakes & Ladders Duel (100 Tiles)\n"
+        "• `/uno` or `.uno` — Couple UNO Duel (2P)\n"
+        "• `/paddle` or `.paddle` — Couple Paddle Clash (2P)\n"
+        "• `/frog` or `.frog` — Frog Fight Lily Pad Duel (2P)\n\n"
+        "🕹️ *Solo Arcade Games:*\n"
+        "• `/flappy` or `.flappy` — Flappy Bird Odyssey\n"
+        "• `/tower` or `.tower` — Tower Builder Deluxe\n"
+        "• `/helix` or `.helix` — Helix Jump 3D\n"
+        "• `/catch` or `.catch` — Solo Heart Catcher\n\n"
+        "📊 *Leaderboard & Help:*\n"
         "• `/scores` or `.scores` — View chat leaderboard\n"
         "• `/help` — Show this guide\n\n"
         "💡 *Inline Game:* Type `@meoww_gamebot` in any chat to share!"
@@ -201,15 +204,17 @@ async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def inline_game_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     results = [
+        # Multiplayer 2-Player Games (at the top, starting with Chess)
         InlineQueryResultGame(id="1", game_short_name="chess"),
         InlineQueryResultGame(id="2", game_short_name="snakes"),
         InlineQueryResultGame(id="3", game_short_name="uno"),
         InlineQueryResultGame(id="4", game_short_name="paddle"),
-        InlineQueryResultGame(id="5", game_short_name="heart_catcher"),
+        InlineQueryResultGame(id="5", game_short_name="frog"),
+        # Solo Arcade Games
         InlineQueryResultGame(id="6", game_short_name="flappy"),
         InlineQueryResultGame(id="7", game_short_name="tower"),
         InlineQueryResultGame(id="8", game_short_name="helix"),
-        InlineQueryResultGame(id="9", game_short_name="frog"),
+        InlineQueryResultGame(id="9", game_short_name="heart_catcher"),
     ]
     await update.inline_query.answer(results, cache_time=0)
 
@@ -226,7 +231,7 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     if not target_msg_id:
         await update.message.reply_text(
-            "🏆 *Game Leaderboard:*\n\nScores are updated directly on each game card in chat!\n\nTo fetch text leaderboard, reply to a game card with `/scores` or launch a game (`/chess`, `/snakes`, `/uno`, `/paddle`, `/catch`, `/flappy`, `/tower`, `/helix`, `/frog`).",
+            "🏆 *Game Leaderboard:*\n\nScores are updated directly on each game card in chat!\n\nTo fetch text leaderboard, reply to a game card with `/scores` or launch a game (`/chess`, `/snakes`, `/uno`, `/paddle`, `/frog`, `/flappy`, `/tower`, `/helix`, `/catch`).",
             parse_mode="Markdown"
         )
         return
@@ -262,16 +267,16 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await play_uno(update, context)
     elif text.startswith((".paddle", ".duel")):
         await play_paddle(update, context)
-    elif text.startswith((".catch", ".heart")):
-        await play_catcher(update, context)
+    elif text.startswith((".frog", ".fight", ".lily")):
+        await play_frog(update, context)
     elif text.startswith((".flappy", ".bird", ".fly")):
         await play_flappy(update, context)
     elif text.startswith((".tower", ".stack", ".build")):
         await play_tower(update, context)
     elif text.startswith((".helix", ".jump", ".drop")):
         await play_helix(update, context)
-    elif text.startswith((".frog", ".fight", ".lily")):
-        await play_frog(update, context)
+    elif text.startswith((".catch", ".heart")):
+        await play_catcher(update, context)
     elif text.startswith((".scores", ".top", ".board")):
         await leaderboard_command(update, context)
     elif text.startswith((".help", ".start")):
@@ -280,15 +285,17 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def set_commands(application):
     await application.bot.set_my_commands([
+        # Multiplayer 2-Player Games (Top)
         BotCommand("chess", "Play Couple Chess Duel (2P)"),
         BotCommand("snakes", "Play Snakes & Ladders Clash (2P)"),
         BotCommand("uno", "Play Couple UNO Duel (2P)"),
         BotCommand("paddle", "Play Couple Paddle Clash (2P)"),
-        BotCommand("catch", "Play Solo Heart Catcher"),
+        BotCommand("frog", "Play Frog Fight Lily Pad Clash (2P)"),
+        # Solo Arcade Games
         BotCommand("flappy", "Play Flappy Bird Odyssey (Solo Arcade)"),
         BotCommand("tower", "Play Tower Builder Deluxe (Solo Stacker)"),
         BotCommand("helix", "Play Helix Jump (3D Ball Arcade)"),
-        BotCommand("frog", "Play Frog Fight (Lily Pad Clash 2P/Solo)"),
+        BotCommand("catch", "Play Solo Heart Catcher"),
         BotCommand("scores", "View Leaderboard"),
         BotCommand("help", "Show game help"),
     ])
