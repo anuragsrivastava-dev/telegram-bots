@@ -34,7 +34,7 @@ chat_sessions: dict[tuple[int, int], dict] = {}
 
 def get_console_url(chat_id: int = 0) -> str:
     if chat_id:
-        return f"{WEBAPP_URL}?chat_id={chat_id}"
+        return f"{WEBAPP_URL}?chat_id={chat_id}&user_id={chat_id}"
     return WEBAPP_URL
 
 
