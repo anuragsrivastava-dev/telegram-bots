@@ -38,10 +38,6 @@ GAMES = {
         "url": "https://anu69-web.github.io/telegram-games/heart-catcher/",
         "title": "Heart Catcher",
     },
-    "flappy_bird": {
-        "url": "https://anu69-web.github.io/telegram-games/flappy-bird/",
-        "title": "Flappy Bird Odyssey",
-    },
     "flappy": {
         "url": "https://anu69-web.github.io/telegram-games/flappy-bird/",
         "title": "Flappy Bird Odyssey",
