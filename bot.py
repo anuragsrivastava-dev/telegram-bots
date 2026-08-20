@@ -1,5 +1,15 @@
+# Bot that executes python code directly from telegram chat and links to Python Console WebApp
+
 import asyncio
-from telegram import Update, BotCommand
+import json
+from telegram import (
+    Update,
+    BotCommand,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    WebAppInfo,
+    MenuButtonWebApp,
+)
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -12,23 +22,44 @@ from telegram.ext import (
 from config import PYBOT_TOKEN
 from runner import PythonSession
 
+WEBAPP_URL = "https://anu69-web.github.io/python-console/"
 chat_sessions: dict[int, dict] = {}
+
+
+def get_console_keyboard():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=WEBAPP_URL))]
+    ])
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
-        "🐍 *Python Code Runner Help:*\n\n"
-        "• `/run <code>` or `.run` — Execute multi-line Python code safely\n"
+        "🐍 *Python Code Runner & Console:*\n\n"
+        "• `/console` or `.console` — Open interactive Web IDE with autocomplete\n"
+        "• `/run <code>` or `.run` — Execute multi-line Python code in chat\n"
         "• `/stop` or `.stop` — Force stop the current executing script\n"
         "• `/help` — Show this guide\n\n"
-        "*Example:*\n"
+        "*Quick Run Example:*\n"
         "```python\n"
         "/run\n"
         "name = input('Your name: ')\n"
         "print(f'Hello {name}!')\n"
         "```"
     )
-    await update.message.reply_text(help_text, parse_mode="Markdown")
+    await update.message.reply_text(
+        help_text,
+        reply_markup=get_console_keyboard(),
+        parse_mode="Markdown"
+    )
+
+
+async def console_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "⚡ *Python Console (Web IDE)*\n\n"
+        "Click below to launch the full-featured interactive compiler with real-time output, auto-indentation, and autocompletion:",
+        reply_markup=get_console_keyboard(),
+        parse_mode="Markdown"
+    )
 
 
 async def monitor(chat_id: int, application: Application):
@@ -96,7 +127,10 @@ async def run(update: Update, context: ContextTypes.DEFAULT_TYPE):
     code = "\n".join(lines[1:]).strip()
 
     if not code:
-        await update.message.reply_text("Usage:\n\n/run\nprint('Hello World')")
+        await update.message.reply_text(
+            "Usage:\n\n/run\nprint('Hello World')",
+            reply_markup=get_console_keyboard()
+        )
         return
 
     if chat_id in chat_sessions and chat_sessions[chat_id]["session"]:
@@ -120,6 +154,8 @@ async def receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await run(update, context)
         elif text.startswith(".stop"):
             await stop(update, context)
+        elif text.startswith((".console", ".code", ".web")):
+            await console_command(update, context)
         elif text.startswith((".help", ".start")):
             await help_command(update, context)
         return
@@ -141,12 +177,42 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🛑 Program stopped.")
 
 
+async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.web_app_data:
+        return
+
+    raw_data = update.message.web_app_data.data
+    try:
+        payload = json.loads(raw_data)
+        code = payload.get("code", "")
+        if code:
+            await update.message.reply_text(
+                f"📥 *Received code from Python Console:*\n\n```python\n{code}\n```\n"
+                "To run this code in chat, send `/run` followed by the code.",
+                parse_mode="Markdown"
+            )
+        else:
+            await update.message.reply_text(f"📥 Received data: `{raw_data}`", parse_mode="Markdown")
+    except Exception:
+        await update.message.reply_text(f"📥 Received from WebApp:\n```\n{raw_data}\n```", parse_mode="Markdown")
+
+
 async def set_commands(application: Application):
     await application.bot.set_my_commands([
-        BotCommand("run", "Run Python script"),
+        BotCommand("console", "Open interactive Python Console"),
+        BotCommand("run", "Run Python script in chat"),
         BotCommand("stop", "Stop executing code"),
         BotCommand("help", "Show code runner help"),
     ])
+    try:
+        await application.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="💻 Console",
+                web_app=WebAppInfo(url=WEBAPP_URL)
+            )
+        )
+    except Exception as e:
+        print(f"Notice: set_chat_menu_button info: {e}")
 
 
 from telegram.request import HTTPXRequest
@@ -162,6 +228,8 @@ request = HTTPXRequest(
 app = ApplicationBuilder().token(PYBOT_TOKEN).request(request).post_init(set_commands).build()
 
 app.add_handler(CommandHandler(["start", "help"], help_command))
+app.add_handler(CommandHandler(["console", "code", "web"], console_command))
 app.add_handler(CommandHandler("run", run))
 app.add_handler(CommandHandler("stop", stop))
+app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, receive))
