@@ -15,6 +15,9 @@ from telegram import (
     Update,
     InlineQueryResultArticle,
     InputTextMessageContent,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    WebAppInfo,
     BotCommand,
 )
 from telegram.constants import ParseMode, ChatAction
@@ -34,6 +37,23 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REMINDER_CHAT_ID = 8630258661
 REMINDER_FILE = os.path.join(BASE_DIR, "wisp_reminder.json")
 REMINDER_DAYS = 28
+
+CARD_WEBAPP_URL = "https://anu69-web.github.io/card/"
+TELEGRAM_CARD_LINK = "https://t.me/meowanuBot/card"
+
+
+def get_card_keyboard(is_group: bool = False):
+    if is_group:
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("💌 Open Anniversary Card", url=TELEGRAM_CARD_LINK)],
+            [InlineKeyboardButton("🔗 Share Card", url=f"https://t.me/share/url?url={TELEGRAM_CARD_LINK}&text=A%20special%20anniversary%20card%20for%20you%20%E2%9D%A4%EF%B8%8F")]
+        ])
+    else:
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("💌 Open Anniversary Card", web_app=WebAppInfo(url=CARD_WEBAPP_URL))],
+            [InlineKeyboardButton("🔗 Share Card (t.me/meowanuBot/card)", url=f"https://t.me/share/url?url={TELEGRAM_CARD_LINK}&text=A%20special%20anniversary%20card%20for%20you%20%E2%9D%A4%EF%B8%8F")]
+        ])
+
 
 client = AsyncGroq(api_key=GROQ_API_KEY)
 
@@ -199,28 +219,45 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🐾 Meow is awake! Use /help to see everything I can do.")
 
 
+async def send_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_obj = update.effective_chat
+    is_group = bool(chat_obj and chat_obj.type in ["group", "supergroup", "channel"])
+    
+    caption = (
+        "🌹 *A Special Anniversary Surprise for You!* 💌\n\n"
+        "Tap below to open your personalized interactive anniversary card with music, memories, and photos ✨\n\n"
+        "📱 *Direct Link:* [t.me/meowanuBot/card](https://t.me/meowanuBot/card)"
+    )
+    await update.message.reply_text(
+        caption,
+        reply_markup=get_card_keyboard(is_group),
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "🐾 *Meow Bot Commands:*\n\n"
-        "*General:*\n"
-        "• `/start` - Wake Meow up\n"
-        "• `/help` - Show this list of commands\n"
-        "• `/clear` - Clear your recent conversation memory\n\n"
+        "*Special & Interactive:*\n"
+        "• `/sendcard` or `.sendcard` — Open Anniversary Card WebApp 💌\n"
+        "• `/start` — Wake Meow up\n"
+        "• `/help` — Show this list of commands\n"
+        "• `/clear` — Clear your recent conversation memory\n\n"
         "*Translation & Languages:*\n"
-        "• `/translate <text>` - Translate with phonetic transliteration\n"
-        "• `/persian <text>` - Direct Persian translation (Script only)\n\n"
+        "• `/translate <text>` — Translate with phonetic transliteration\n"
+        "• `/persian <text>` — Direct Persian translation (Script only)\n\n"
         "*Style & Text Tools:*\n"
-        "• `/rewrite <text>` - Rewrite naturally\n"
-        "• `/cute <text>` - Make it cute and sweet\n"
-        "• `/flirty <text>` - Make it playful and flirty\n"
-        "• `/romantic <text>` - Make it romantic\n"
-        "• `/comfort <text>` - Write a comforting response\n"
-        "• `/fix <text>` - Fix grammar & punctuation\n"
-        "• `/short <text>` - Shorten the message\n"
-        "• `/expand <text>` - Expand with natural detail\n"
-        "• `/emoji <text>` - Add natural emojis\n"
-        "• `/noemoji <text>` - Remove all emojis\n"
-        "• `/summarize <text>` - Summarize key points\n\n"
+        "• `/rewrite <text>` — Rewrite naturally\n"
+        "• `/cute <text>` — Make it cute and sweet\n"
+        "• `/flirty <text>` — Make it playful and flirty\n"
+        "• `/romantic <text>` — Make it romantic\n"
+        "• `/comfort <text>` — Write a comforting response\n"
+        "• `/fix <text>` — Fix grammar & punctuation\n"
+        "• `/short <text>` — Shorten the message\n"
+        "• `/expand <text>` — Expand with natural detail\n"
+        "• `/emoji <text>` — Add natural emojis\n"
+        "• `/noemoji <text>` — Remove all emojis\n"
+        "• `/summarize <text>` — Summarize key points\n\n"
         "_Tip: You can also run commands by replying directly to any message!_"
     )
     await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
@@ -236,6 +273,18 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = update.message.text.strip()
+
+    # Intercept dot and slash commands for card and general utilities
+    clean_text = text.lower()
+    if clean_text.startswith((".sendcard", ".card", ".anniversary", ".surprise")):
+        await send_card_command(update, context)
+        return
+    elif clean_text.startswith((".help", ".start")):
+        await help_command(update, context)
+        return
+    elif clean_text.startswith(".clear"):
+        await clear_command(update, context)
+        return
     replied_text = ""
     if update.message.reply_to_message and update.message.reply_to_message.text:
         replied_text = update.message.reply_to_message.text
@@ -314,35 +363,53 @@ async def command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.inline_query.query
-    if not query:
-        return
+    query = (update.inline_query.query or "").strip()
 
-    try:
-        answer = await ask_meow(update.effective_user.id, query, is_command=False)
-        results = [
-            InlineQueryResultArticle(
-                id="1",
-                title="🐾 Meow",
-                description=answer[:100],
-                input_message_content=InputTextMessageContent(answer),
+    results = [
+        InlineQueryResultArticle(
+            id="anniversary_card",
+            title="💌 Open Anniversary Card",
+            description="Interactive Anniversary Card WebApp with music, photos, & memories",
+            input_message_content=InputTextMessageContent(
+                "🌹 *A Special Anniversary Surprise for You!* 💌\n\n"
+                "Tap below to open your interactive anniversary card ✨\n\n"
+                "📱 *Direct Link:* [t.me/meowanuBot/card](https://t.me/meowanuBot/card)",
+                parse_mode=ParseMode.MARKDOWN,
+            ),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("💌 Open Anniversary Card", url=TELEGRAM_CARD_LINK)]
+            ])
+        )
+    ]
+
+    if query and query.lower() not in ["card", "sendcard", "anniversary"]:
+        try:
+            answer = await ask_meow(update.effective_user.id, query, is_command=False)
+            results.append(
+                InlineQueryResultArticle(
+                    id="meow_ai",
+                    title="🐾 Meow AI",
+                    description=answer[:100],
+                    input_message_content=InputTextMessageContent(answer),
+                )
             )
-        ]
-        await update.inline_query.answer(results, cache_time=0)
-    except Exception as e:
-        results = [
-            InlineQueryResultArticle(
-                id="error",
-                title="❌ Error",
-                description=str(e),
-                input_message_content=InputTextMessageContent("Meow is taking a nap 😿"),
+        except Exception as e:
+            results.append(
+                InlineQueryResultArticle(
+                    id="error",
+                    title="❌ Error",
+                    description=str(e),
+                    input_message_content=InputTextMessageContent("Meow is taking a nap 😿"),
+                )
             )
-        ]
-        await update.inline_query.answer(results)
+
+    await update.inline_query.answer(results, cache_time=0)
 
 
 async def set_commands(application):
     await application.bot.set_my_commands([
+        BotCommand("sendcard", "Open Anniversary Card WebApp"),
+        BotCommand("card", "Open Anniversary Card"),
         BotCommand("start", "Wake Meow up"),
         BotCommand("help", "List all available commands"),
         BotCommand("clear", "Clear conversation memory"),
@@ -419,6 +486,7 @@ app.job_queue.run_repeating(
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("clear", clear_command))
+app.add_handler(CommandHandler(["sendcard", "card", "anniversary"], send_card_command))
 
 for cmd in COMMAND_PROMPTS:
     app.add_handler(CommandHandler(cmd, command_handler))
