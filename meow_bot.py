@@ -43,7 +43,7 @@ TELEGRAM_CARD_LINK = "https://t.me/meowanuBot/card"
 
 
 def get_card_keyboard(is_group: bool = False, user_id: int = None):
-    url = f"{CARD_WEBAPP_URL}?user_id={user_id}" if user_id else CARD_WEBAPP_URL
+    url = f"{CARD_WEBAPP_URL}?user_id={user_id}&chat_id={user_id}" if user_id else CARD_WEBAPP_URL
     if is_group:
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("💌 Open Anniversary Card", url=TELEGRAM_CARD_LINK)],
