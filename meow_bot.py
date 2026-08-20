@@ -353,9 +353,8 @@ async def send_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id if update.effective_user else None
     
     caption = (
-        "🌹 *A Special Anniversary Surprise for You!* 💌\n\n"
-        "Tap below to open your personalized interactive anniversary card with music, memories, and photos ✨\n\n"
-        "📱 *Direct Link:* [t.me/meowanuBot/card](https://t.me/meowanuBot/card)"
+        "*A Special Anniversary Surprise for You Sweetie!* 💌\n\n"
+        "Wish I could have done more but for now you'll just have to enjoy this... ✨\n\n"
     )
     await update.message.reply_text(
         caption,
