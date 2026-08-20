@@ -38,12 +38,18 @@ def get_console_url(chat_id: int = 0) -> str:
     return WEBAPP_URL
 
 
-def get_console_keyboard(chat_id: int = 0):
+def get_console_keyboard(chat_id: int = 0, is_group: bool = False):
     url = get_console_url(chat_id)
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=url))],
-        [InlineKeyboardButton("🔗 Share App (t.me/py_runbot/console)", url=f"https://t.me/share/url?url={TELEGRAM_WEBAPP_LINK}&text=Try%20Python%20Console%20on%20Telegram!")]
-    ])
+    if is_group:
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("🐍 Launch Python Console", url=TELEGRAM_WEBAPP_LINK)],
+            [InlineKeyboardButton("🔗 Share App", url=f"https://t.me/share/url?url={TELEGRAM_WEBAPP_LINK}&text=Try%20Python%20Console%20on%20Telegram!")]
+        ])
+    else:
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=url))],
+            [InlineKeyboardButton("🔗 Share App (t.me/py_runbot/console)", url=f"https://t.me/share/url?url={TELEGRAM_WEBAPP_LINK}&text=Try%20Python%20Console%20on%20Telegram!")]
+        ])
 
 
 def get_reply_keyboard(chat_id: int = 0):
@@ -55,7 +61,10 @@ def get_reply_keyboard(chat_id: int = 0):
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id if update.effective_chat else 0
+    chat = update.effective_chat
+    chat_id = chat.id if chat else 0
+    is_group = bool(chat and chat.type in ["group", "supergroup", "channel"])
+    
     help_text = (
         "🐍 *Python Code Runner & Console:*\n\n"
         "• `/console` or `.console` — Open interactive Web IDE with autocomplete\n"
@@ -72,24 +81,26 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(
         help_text,
-        reply_markup=get_console_keyboard(chat_id),
+        reply_markup=get_console_keyboard(chat_id, is_group),
         parse_mode="Markdown"
     )
 
 
 async def console_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id if update.effective_chat else 0
+    chat = update.effective_chat
+    chat_id = chat.id if chat else 0
+    is_group = bool(chat and chat.type in ["group", "supergroup", "channel"])
+    
     await update.message.reply_text(
         "⚡ *Python Console (Web IDE)*\n\n"
         "Click below to launch the full-featured interactive compiler with real-time output, auto-indentation, and autocompletion:\n\n"
         "🔗 *Direct Link:* [t.me/py_runbot/console](https://t.me/py_runbot/console)",
-        reply_markup=get_console_keyboard(chat_id),
+        reply_markup=get_console_keyboard(chat_id, is_group),
         parse_mode="Markdown"
     )
 
 
 async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.inline_query.from_user.id if update.inline_query and update.inline_query.from_user else 0
     results = [
         InlineQueryResultArticle(
             id="python_console_app",
@@ -101,7 +112,9 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                 "📱 *Direct Link:* [t.me/py_runbot/console](https://t.me/py_runbot/console)",
                 parse_mode="Markdown"
             ),
-            reply_markup=get_console_keyboard(user_id)
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🐍 Launch Python Console", url=TELEGRAM_WEBAPP_LINK)]
+            ])
         )
     ]
     await update.inline_query.answer(results, cache_time=1)
@@ -166,7 +179,9 @@ async def monitor(chat_id: int, application: Application):
 
 
 async def run(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
+    chat = update.effective_chat
+    chat_id = chat.id if chat else 0
+    is_group = bool(chat and chat.type in ["group", "supergroup", "channel"])
     message = update.message.text
     lines = message.splitlines()
     code = "\n".join(lines[1:]).strip()
@@ -174,7 +189,7 @@ async def run(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not code:
         await update.message.reply_text(
             "Usage:\n\n/run\nprint('Hello World')",
-            reply_markup=get_console_keyboard(chat_id)
+            reply_markup=get_console_keyboard(chat_id, is_group)
         )
         return
 
