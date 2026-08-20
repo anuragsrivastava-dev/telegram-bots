@@ -29,7 +29,7 @@ from runner import PythonSession
 
 WEBAPP_URL = "https://anu69-web.github.io/python-console/"
 TELEGRAM_WEBAPP_LINK = "https://t.me/py_runbot/console"
-chat_sessions: dict[int, dict] = {}
+chat_sessions: dict[tuple[int, int], dict] = {}
 
 
 def get_console_url(chat_id: int = 0) -> str:
@@ -120,8 +120,8 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     await update.inline_query.answer(results, cache_time=1)
 
 
-async def monitor(chat_id: int, application: Application):
-    state = chat_sessions.get(chat_id)
+async def monitor(session_key: tuple[int, int], chat_id: int, application: Application):
+    state = chat_sessions.get(session_key)
     if not state or not state["session"]:
         return
 
@@ -130,7 +130,7 @@ async def monitor(chat_id: int, application: Application):
     while session and session.running():
         if session.timed_out():
             session.stop()
-            chat_sessions.pop(chat_id, None)
+            chat_sessions.pop(session_key, None)
             await application.bot.send_message(
                 chat_id=chat_id,
                 text="⏰ Program timed out after 10 seconds."
@@ -156,16 +156,22 @@ async def monitor(chat_id: int, application: Application):
     error = session.get_stderr().strip()
 
     if error:
-        last_line = error.splitlines()[-1]
+        err_lines = [l for l in error.splitlines() if "tempfile" not in l and "INPUT_PATCH" not in l]
+        clean_err = "\n".join(err_lines[-10:]).strip()
+        if len(clean_err) > 3500:
+            clean_err = clean_err[-3500:]
         await application.bot.send_message(
             chat_id=chat_id,
-            text=f"❌ Error\n\n```{last_line}```",
+            text=f"❌ *Error:*\n\n```{clean_err}```",
             parse_mode="Markdown"
         )
     elif output.strip():
+        out_text = output.strip()
+        if len(out_text) > 3800:
+            out_text = out_text[:3800] + "\n\n... [Output truncated: reached Telegram length limit]"
         await application.bot.send_message(
             chat_id=chat_id,
-            text=f"```\n{output.strip()}\n```",
+            text=f"```\n{out_text}\n```",
             parse_mode="Markdown"
         )
     else:
@@ -175,13 +181,16 @@ async def monitor(chat_id: int, application: Application):
         )
 
     session.stop()
-    chat_sessions.pop(chat_id, None)
+    chat_sessions.pop(session_key, None)
 
 
 async def run(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
     chat_id = chat.id if chat else 0
+    user_id = update.effective_user.id if update.effective_user else 0
+    session_key = (chat_id, user_id)
     is_group = bool(chat and chat.type in ["group", "supergroup", "channel"])
+
     message = update.message.text
     lines = message.splitlines()
     code = "\n".join(lines[1:]).strip()
@@ -193,19 +202,21 @@ async def run(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    if chat_id in chat_sessions and chat_sessions[chat_id]["session"]:
-        chat_sessions[chat_id]["session"].stop()
+    if session_key in chat_sessions and chat_sessions[session_key]["session"]:
+        chat_sessions[session_key]["session"].stop()
 
     session = PythonSession()
     session.start(code)
-    chat_sessions[chat_id] = {"session": session, "waiting_for_input": False}
+    chat_sessions[session_key] = {"session": session, "waiting_for_input": False}
 
-    asyncio.create_task(monitor(chat_id, context.application))
+    asyncio.create_task(monitor(session_key, chat_id, context.application))
 
 
 async def receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    state = chat_sessions.get(chat_id)
+    user_id = update.effective_user.id if update.effective_user else 0
+    session_key = (chat_id, user_id)
+    state = chat_sessions.get(session_key)
 
     if not state or not state["waiting_for_input"] or not state["session"]:
         # Handle dot prefixes if not actively waiting for input
@@ -222,15 +233,17 @@ async def receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     state["waiting_for_input"] = False
     state["session"].send_input(update.message.text)
-    asyncio.create_task(monitor(chat_id, context.application))
+    asyncio.create_task(monitor(session_key, chat_id, context.application))
 
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    state = chat_sessions.pop(chat_id, None)
+    user_id = update.effective_user.id if update.effective_user else 0
+    session_key = (chat_id, user_id)
+    state = chat_sessions.pop(session_key, None)
 
     if not state or not state["session"]:
-        await update.message.reply_text("❌ No program is running.")
+        await update.message.reply_text("❌ No program is currently running.")
         return
 
     state["session"].stop()

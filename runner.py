@@ -8,11 +8,35 @@ import time
 
 INPUT_PATCH = """
 import builtins
+import sys
+
+# High-risk modules blocked from execution in Telegram chat mode
+BLOCKED_MODULES = {
+    "os", "subprocess", "shutil", "sys", "socket", "ctypes", 
+    "pathlib", "pty", "winreg", "msvcrt", "multiprocessing",
+    "threading", "signal", "tempfile", "_winapi", "posix", "nt",
+    "webbrowser", "pynput", "psutil"
+}
+
+_real_import = builtins.__import__
+
+def _safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    base_module = name.split(".")[0]
+    if base_module in BLOCKED_MODULES:
+        raise ImportError(f"🚫 Security: Module '{name}' is restricted in chat mode.\\n💡 Open the Python Console WebApp to run full standard library code safely in your browser!")
+    return _real_import(name, globals, locals, fromlist, level)
+
+builtins.__import__ = _safe_import
+
+def _safe_open(*args, **kwargs):
+    raise PermissionError("🚫 Security: Direct filesystem access (open) is disabled in chat mode.\\n💡 Use the Python Console WebApp for full local code execution!")
+
+builtins.open = _safe_open
 
 _real_input = builtins.input
 
 def input(prompt=""):
-    print("__INPUT__" + prompt, flush=True)
+    print("__INPUT__" + str(prompt), flush=True)
     return _real_input("")
 
 builtins.input = input
