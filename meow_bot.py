@@ -238,13 +238,15 @@ async def send_hearts_response(update: Update, context: ContextTypes.DEFAULT_TYP
 async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.web_app_data:
         return
-    try:
-        data = json.loads(update.message.web_app_data.data)
-    except Exception:
-        data = {}
-
-    user_id = data.get("user_id") or (update.effective_user.id if update.effective_user else None)
-    await send_hearts_response(update, context, recipient_id=user_id)
+    
+    hearts_msg = (
+        "💖💖💖💖💖💖💖💖💖💖\n"
+        "🌹 *A shower of love sent just for you!* 💌\n"
+        "💕❤️💓💗💖💕❤️💓💗💖\n\n"
+        "_\"Distance means so little when someone means so much.\"_ ✨\n\n"
+        "Happy Anniversary, My Love! 💍"
+    )
+    await update.message.reply_text(hearts_msg, parse_mode=ParseMode.MARKDOWN)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
