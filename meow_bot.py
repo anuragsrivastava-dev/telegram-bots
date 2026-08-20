@@ -332,10 +332,10 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     
     hearts_msg = (
         "💖💖💖💖💖💖💖💖💖💖\n"
-        "🌹 *A shower of love sent just for you!* 💌\n"
+        "🌹 *A shower of love sent just for my pretty little baby!*\n"
         "💕❤️💓💗💖💕❤️💓💗💖\n\n"
         "_\"Distance means so little when someone means so much.\"_ ✨\n\n"
-        "Happy Anniversary, My Love! 💍"
+        "Happy Anniversary, My Love!"
     )
     await update.message.reply_text(hearts_msg, parse_mode=ParseMode.MARKDOWN)
 
