@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 from telegram import (
     Update,
     BotCommand,
@@ -24,12 +25,38 @@ from telegram.ext import (
     filters,
 )
 
-from config import PYBOT_TOKEN
+from config import PYBOT_TOKEN, ADMIN_USER_ID
 from runner import PythonSession
 
 WEBAPP_URL = "https://anu69-web.github.io/python-console/"
 TELEGRAM_WEBAPP_LINK = "https://t.me/py_runbot/console"
 chat_sessions: dict[tuple[int, int], dict] = {}
+
+
+async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🐍 *Python Console Bot* is Online & Ready!",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id if update.effective_user else 0
+    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_text = (
+        "👑 *Python Console Bot Admin Commands:*\n\n"
+        "• `/ping` — Check bot latency & status\n"
+        "• `/run <code>` — Execute Python code\n"
+        "• `/stop` — Terminate running Python session\n"
+        "• `/console` — Open Python Console WebApp\n"
+        "• `/helpad` — Show this admin panel"
+    )
+    await update.message.reply_text(admin_text, parse_mode="Markdown")
 
 
 def get_console_url(chat_id: int = 0) -> str:
@@ -221,7 +248,11 @@ async def receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not state or not state["waiting_for_input"] or not state["session"]:
         # Handle dot prefixes if not actively waiting for input
         text = update.message.text.strip().lower()
-        if text.startswith(".run"):
+        if text.startswith(".ping"):
+            await ping(update, context)
+        elif text.startswith(".helpad"):
+            await helpad(update, context)
+        elif text.startswith(".run"):
             await run(update, context)
         elif text.startswith(".stop"):
             await stop(update, context)
@@ -301,6 +332,8 @@ request = HTTPXRequest(
 app = ApplicationBuilder().token(PYBOT_TOKEN).request(request).post_init(set_commands).build()
 
 app.add_handler(CommandHandler(["start", "help"], help_command))
+app.add_handler(CommandHandler("ping", ping))
+app.add_handler(CommandHandler("helpad", helpad))
 app.add_handler(CommandHandler(["console", "code", "web"], console_command))
 app.add_handler(CommandHandler("run", run))
 app.add_handler(CommandHandler("stop", stop))

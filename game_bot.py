@@ -1,7 +1,8 @@
 import logging
 import os
+import time
 import sqlite3
-from config import GAME_BOT_TOKEN
+from config import GAME_BOT_TOKEN, ADMIN_USER_ID
 
 from telegram import (
     Update,
@@ -161,6 +162,31 @@ GAMES = {
 }
 
 GAME_ORDER = ["chess", "snakes", "uno", "paddle", "frog", "flappy", "tower", "helix", "heart_catcher"]
+
+
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🎮 *Couple Game Bot* is Online & Ready to Play!",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Couple Game Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/chess`, `/snakes`, `/uno`, `/paddle`, `/frog` — Launch 2P games\n"
+        "• `/flappy`, `/tower`, `/helix`, `/catch` — Launch Solo Arcade games\n"
+        "• `/scores` — View leaderboard comparison chart\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -477,7 +503,11 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = update.message.text.strip().lower()
-    if text.startswith((".chess", ".checkmate")):
+    if text.startswith(".ping"):
+        await ping_command(update, context)
+    elif text.startswith(".helpad"):
+        await helpad_command(update, context)
+    elif text.startswith((".chess", ".checkmate")):
         await play_chess(update, context)
     elif text.startswith((".snakes", ".snake", ".ladder", ".sl")):
         await play_snakes(update, context)
@@ -531,6 +561,8 @@ request = HTTPXRequest(
 app = ApplicationBuilder().token(GAME_BOT_TOKEN).request(request).post_init(set_commands).build()
 
 app.add_handler(CommandHandler(["start", "help"], help_command))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler(["chess"], play_chess))
 app.add_handler(CommandHandler(["snakes", "snake", "ladder"], play_snakes))
 app.add_handler(CommandHandler(["uno", "cards"], play_uno))

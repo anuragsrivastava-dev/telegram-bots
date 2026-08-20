@@ -1,13 +1,14 @@
 import os
 import re
 import json
+import time
 import asyncio
 import sqlite3
 import requests
-from datetime import time
+from datetime import time as dt_time
 from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
-from config import PRICE_BOT_TOKEN
+from config import PRICE_BOT_TOKEN, ADMIN_USER_ID
 
 from telegram import Update, BotCommand
 from telegram.ext import (
@@ -18,7 +19,7 @@ from telegram.ext import (
     filters,
 )
 
-SCHEDULED_TIME = time(hour=12, minute=0, second=0, tzinfo=ZoneInfo("Asia/Kolkata"))
+SCHEDULED_TIME = dt_time(hour=12, minute=0, second=0, tzinfo=ZoneInfo("Asia/Kolkata"))
 
 HEADERS = {
     "User-Agent": (
@@ -200,6 +201,30 @@ async def fetch_product_info(url: str):
     return await asyncio.to_thread(fetch_product_info_sync, url)
 
 
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n💰 *Price Tracker Bot* is Online & Tracking! ✨",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Price Tracker Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/list` — View your watchlist & trigger live checks\n"
+        "• `/remove <ID>` — Stop tracking an item\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
+
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome = (
         "💰 *Price Tracker Bot Help:*\n\n"
@@ -300,7 +325,13 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text.strip()
 
-    if text.startswith(".list"):
+    if text.startswith(".ping"):
+        await ping_command(update, context)
+        return
+    elif text.startswith(".helpad"):
+        await helpad_command(update, context)
+        return
+    elif text.startswith(".list"):
         await list_command(update, context)
         return
     elif text.startswith((".help", ".start")):
@@ -414,6 +445,8 @@ app.job_queue.run_daily(
 )
 
 app.add_handler(CommandHandler(["start", "help"], help_command))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler("list", list_command))
 app.add_handler(CommandHandler("remove", remove_command))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_url))

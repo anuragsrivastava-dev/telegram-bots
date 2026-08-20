@@ -1,6 +1,7 @@
 import random
 import re
-from config import TND_BOT_TOKEN
+import time
+from config import TND_BOT_TOKEN, ADMIN_USER_ID
 
 from telegram import (
     Update,
@@ -241,6 +242,33 @@ def get_prompt_text(user_name: str, choice_type: str) -> tuple[str, str]:
 # ----------------------------------------------------
 # Command Handlers (. and / prefixes)
 # ----------------------------------------------------
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🔥 *Truth & Dare Bot* is Online & Ready to Play! ✨",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Truth & Dare Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/tnd` — Start a spicy round\n"
+        "• `/truth` — Draw a spicy Truth question\n"
+        "• `/dare` — Draw a spicy Dare challenge\n"
+        "• `/random` — Draw a random prompt\n"
+        "• `/skip` — Skip to next prompt\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
+
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "🌹 *Spicy & Romantic Truth or Dare Bot is ready\\!*\n\n"
@@ -333,7 +361,11 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     command = text[1:].split()[0].split("@")[0]
 
-    if command in ["tnd", "game", "play"]:
+    if command == "ping":
+        await ping_command(update, context)
+    elif command == "helpad":
+        await helpad_command(update, context)
+    elif command in ["tnd", "game", "play"]:
         await tnd_round_command(update, context)
     elif command == "truth":
         await truth_command(update, context)
@@ -403,6 +435,8 @@ app = ApplicationBuilder().token(TND_BOT_TOKEN).request(request).post_init(set_c
 
 # Slash Commands
 app.add_handler(CommandHandler("start", start_command))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler(["tnd", "game"], tnd_round_command))
 app.add_handler(CommandHandler("truth", truth_command))

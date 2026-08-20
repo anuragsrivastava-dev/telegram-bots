@@ -1,9 +1,10 @@
 import os
 import re
+import time
 import uuid
 import sqlite3
 import httpx
-from config import TEMPMAIL_BOT_TOKEN
+from config import TEMPMAIL_BOT_TOKEN, ADMIN_USER_ID
 
 from telegram import Update, BotCommand
 from telegram.constants import ParseMode
@@ -11,7 +12,9 @@ from telegram.request import HTTPXRequest
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
+    MessageHandler,
     ContextTypes,
+    filters,
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -255,6 +258,32 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
 
 
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n📬 *Temp Mail Bot* is Online & Listening!",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Temp Mail Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/newmail` — Generate a new disposable email\n"
+        "• `/mymail` — Show active disposable email\n"
+        "• `/check` — Check inbox manually\n"
+        "• `/delete` — Delete active disposable email\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
+
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "📬 *Temporary Email Bot Help Guide:*\n\n"
@@ -407,6 +436,26 @@ async def set_commands(application):
     ])
 
 
+async def handle_dot_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+    text = update.message.text.strip().lower()
+    if text.startswith(".ping"):
+        await ping_command(update, context)
+    elif text.startswith(".helpad"):
+        await helpad_command(update, context)
+    elif text.startswith((".help", ".start")):
+        await help_command(update, context)
+    elif text.startswith(".newmail"):
+        await newmail(update, context)
+    elif text.startswith(".mymail"):
+        await mymail(update, context)
+    elif text.startswith(".check"):
+        await check_command(update, context)
+    elif text.startswith(".delete"):
+        await delete_mail(update, context)
+
+
 init_db()
 
 request = HTTPXRequest(
@@ -421,8 +470,11 @@ app = ApplicationBuilder().token(TEMPMAIL_BOT_TOKEN).request(request).post_init(
 app.job_queue.run_repeating(check_inboxes_job, interval=15, first=5)
 
 app.add_handler(CommandHandler("start", start_command))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("newmail", newmail))
 app.add_handler(CommandHandler("mymail", mymail))
 app.add_handler(CommandHandler("check", check_command))
 app.add_handler(CommandHandler("delete", delete_mail))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_dot_commands))

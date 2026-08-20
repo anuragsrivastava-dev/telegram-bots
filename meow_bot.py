@@ -391,6 +391,36 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
 
 
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import time
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🐾 *Meow Bot* is Online & Purring! ✨",
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id if update.effective_user else 0
+    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+
+    admin_help_text = (
+        "👑 *Meow Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot online status & ping latency\n"
+        "• `/schedulecard <user_id> <YYYY-MM-DD> <HH:MM> [timezone]` — Schedule automated card delivery\n"
+        "• `/schedules` — View all pending scheduled card deliveries\n"
+        "• `/cancelschedule <id>` — Cancel a scheduled card delivery\n"
+        "• `/sendcard` — Send the secret anniversary card surprise instantly\n"
+        "• `/clear` — Clear user conversation history\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help_text, parse_mode=ParseMode.MARKDOWN)
+
+
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     clear_chat_history(update.effective_user.id)
     await update.message.reply_text("🧹 Conversation history cleared!")
@@ -531,7 +561,13 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Secret triggers for Anniversary Card, Love Hearts, and Card Scheduling
     clean_text = text.lower()
-    if clean_text.startswith(".sendcard"):
+    if clean_text.startswith(".ping"):
+        await ping_command(update, context)
+        return
+    elif clean_text.startswith(".helpad"):
+        await helpad_command(update, context)
+        return
+    elif clean_text.startswith(".sendcard"):
         await send_card_command(update, context)
         return
     elif clean_text.startswith(".schedulecard"):
@@ -741,6 +777,8 @@ app.job_queue.run_repeating(
 )
 
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("clear", clear_command))
 app.add_handler(CommandHandler("sendcard", send_card_command))

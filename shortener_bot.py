@@ -1,6 +1,7 @@
 import re
+import time
 import httpx
-from config import SHORTENER_BOT_TOKEN
+from config import SHORTENER_BOT_TOKEN, ADMIN_USER_ID
 
 from telegram import Update, BotCommand
 from telegram.constants import ParseMode
@@ -91,6 +92,30 @@ async def expand_url(short_url: str) -> str | None:
                 return None
 
 
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🔗 *Shortener Bot* is Online & Ready!",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Shortener Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/short <url> [alias]` — Shorten link with custom alias\n"
+        "• `/expand <url>` — Reveal destination behind short link\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
+
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "🔗 *Link Shortener Bot is ready\\!*\n\n"
@@ -159,6 +184,17 @@ async def expand_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_direct_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
+    text_lower = text.lower()
+    if text_lower.startswith(".ping"):
+        await ping_command(update, context)
+        return
+    elif text_lower.startswith(".helpad"):
+        await helpad_command(update, context)
+        return
+    elif text_lower.startswith((".help", ".start")):
+        await help_command(update, context)
+        return
+
     match = URL_REGEX.search(text)
     if not match:
         return
@@ -197,6 +233,8 @@ request = HTTPXRequest(
 app = ApplicationBuilder().token(SHORTENER_BOT_TOKEN).request(request).post_init(set_commands).build()
 
 app.add_handler(CommandHandler("start", start_command))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("short", short_command))
 app.add_handler(CommandHandler("expand", expand_command))

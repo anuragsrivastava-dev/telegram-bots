@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -195,6 +196,33 @@ def build_question_markup(user_id: int, ch_idx: int, q_idx: int) -> InlineKeyboa
         keyboard.append(row)
 
     return InlineKeyboardMarkup(keyboard)
+
+
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🎓 *Python Quiz Bot* is Online & Ready!",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Python Quiz Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/listq` — List all chapters, IDs, and indexed questions\n"
+        "• `/addch <id> <icon> <title>` — Add a new chapter\n"
+        "• `/delch <id>` — Delete a chapter and its questions\n"
+        "• `/addq <id>` — Add a question (multi-line format)\n"
+        "• `/delq <id> <index>` — Delete a question by number\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -545,7 +573,11 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
     text = update.message.text.strip().lower()
-    if text.startswith((".py", ".learn", ".course")):
+    if text.startswith(".ping"):
+        await ping_command(update, context)
+    elif text.startswith(".helpad"):
+        await helpad_command(update, context)
+    elif text.startswith((".py", ".learn", ".course")):
         await py_command(update, context)
     elif text.startswith((".help", ".quizhelp")):
         await help_command(update, context)
@@ -574,6 +606,8 @@ request = HTTPXRequest(
 )
 
 app = ApplicationBuilder().token(QUIZ_BOT_TOKEN).request(request).post_init(set_commands).build()
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler(["py", "learn", "course"], py_command))
 app.add_handler(CommandHandler(["help", "start"], help_command))
 

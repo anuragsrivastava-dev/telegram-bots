@@ -2,8 +2,9 @@ import os
 import asyncio
 import random
 import re
+import time
 import sqlite3
-from config import MEMORY_BOT_TOKEN
+from config import MEMORY_BOT_TOKEN, ADMIN_USER_ID
 
 from telegram import (
     Update,
@@ -277,6 +278,31 @@ def get_game_status_text(chat_id: int, game: dict) -> str:
 # ----------------------------------------------------
 # Command Handlers
 # ----------------------------------------------------
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🧩 *Memory Match Bot* is Online & Ready!",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Memory Match Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/match` — Start Memory Match game\n"
+        "• `/stop` — Stop active duel\n"
+        "• `/stats` — View chat leaderboard & stats\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
+
+
 async def start_game_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "🧩 *Memory Match Duel*\n\n"
@@ -336,7 +362,11 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     command = text[1:].split()[0].split("@")[0]
 
-    if command in ["match", "memory", "mem", "pair"]:
+    if command == "ping":
+        await ping_command(update, context)
+    elif command == "helpad":
+        await helpad_command(update, context)
+    elif command in ["match", "memory", "mem", "pair"]:
         await start_game_menu(update, context)
     elif command in ["stop", "end", "cancel"]:
         await stop_game_command(update, context)
@@ -558,6 +588,8 @@ app = ApplicationBuilder().token(MEMORY_BOT_TOKEN).request(request).post_init(se
 
 # Slash Commands
 app.add_handler(CommandHandler(["match", "memory", "game"], start_game_menu))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler(["stop", "end", "cancel"], stop_game_command))
 app.add_handler(CommandHandler(["stats", "score", "scores", "leaderboard", "ranks"], stats_command))
 app.add_handler(CommandHandler("help", help_command))

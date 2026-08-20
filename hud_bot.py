@@ -1,4 +1,5 @@
 import os
+import time
 import asyncio
 import datetime
 import math
@@ -8,7 +9,7 @@ import sqlite3
 import httpx
 from zoneinfo import ZoneInfo
 
-from config import HUD_BOT_TOKEN
+from config import HUD_BOT_TOKEN, ADMIN_USER_ID
 
 from telegram import (
     Update,
@@ -282,6 +283,32 @@ async def build_hud_text(chat_id: int) -> str:
 # ----------------------------------------------------
 # Command Handlers
 # ----------------------------------------------------
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("🏓 Pinging...")
+    latency = int((time.time() - start_time) * 1000)
+    await msg.edit_text(
+        f"🏓 *Pong!* `{latency}ms`\n🌐 *Couple HUD Bot* is Online & Tracking!",
+        parse_mode="Markdown"
+    )
+
+
+async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("⛔ You are not authorized to use admin commands.")
+        return
+    admin_help = (
+        "👑 *Couple HUD Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & online status\n"
+        "• `/hud` — Display live status dashboard\n"
+        "• `/events` — View milestone countdowns\n"
+        "• `/add <title> <YYYY-MM-DD>` — Add countdown milestone\n"
+        "• `/del <id>` — Delete a milestone\n"
+        "• `/helpad` — Show this admin help menu"
+    )
+    await update.message.reply_text(admin_help, parse_mode="Markdown")
+
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "🌹 *LDR Couple HUD & Milestone Bot is ready\\!*\n\n"
@@ -386,7 +413,11 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
     command = parts[0].lower().split("@")[0]
     context.args = parts[1:]
 
-    if command in ["hud", "dashboard", "status", "time", "clock"]:
+    if command == "ping":
+        await ping_command(update, context)
+    elif command == "helpad":
+        await helpad_command(update, context)
+    elif command in ["hud", "dashboard", "status", "time", "clock"]:
         await hud_command(update, context)
     elif command in ["add", "addevent", "newevent"]:
         await add_milestone_command(update, context)
@@ -479,6 +510,8 @@ request = HTTPXRequest(
 app = ApplicationBuilder().token(HUD_BOT_TOKEN).request(request).post_init(set_commands).build()
 
 app.add_handler(CommandHandler(["start", "help"], start_command))
+app.add_handler(CommandHandler("ping", ping_command))
+app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler(["hud", "status", "dashboard"], hud_command))
 app.add_handler(CommandHandler(["events", "milestones"], milestones_command))
 app.add_handler(CommandHandler("add", add_milestone_command))
