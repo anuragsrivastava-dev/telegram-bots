@@ -7,6 +7,10 @@ from telegram import (
     BotCommand,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
     WebAppInfo,
     MenuButtonWebApp,
 )
@@ -16,6 +20,7 @@ from telegram.ext import (
     ContextTypes,
     CommandHandler,
     MessageHandler,
+    InlineQueryHandler,
     filters,
 )
 
@@ -32,6 +37,13 @@ def get_console_keyboard():
         [InlineKeyboardButton("🐍 Launch Python Console", web_app=WebAppInfo(url=WEBAPP_URL))],
         [InlineKeyboardButton("🔗 Share App (t.me/py_runbot/console)", url=f"https://t.me/share/url?url={TELEGRAM_WEBAPP_LINK}&text=Try%20Python%20Console%20on%20Telegram!")]
     ])
+
+
+def get_reply_keyboard():
+    return ReplyKeyboardMarkup(
+        [[KeyboardButton("💻 Open Python Console", web_app=WebAppInfo(url=WEBAPP_URL))]],
+        resize_keyboard=True
+    )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -64,6 +76,24 @@ async def console_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_console_keyboard(),
         parse_mode="Markdown"
     )
+
+
+async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    results = [
+        InlineQueryResultArticle(
+            id="python_console_app",
+            title="🐍 Open Python Console",
+            description="Launch interactive in-browser Python IDE with auto-complete & runner",
+            input_message_content=InputTextMessageContent(
+                "⚡ *Python Console (Web IDE)*\n\n"
+                "Interactive Python compiler with instant execution and auto-complete.\n\n"
+                "📱 *Direct Link:* [t.me/py_runbot/console](https://t.me/py_runbot/console)",
+                parse_mode="Markdown"
+            ),
+            reply_markup=get_console_keyboard()
+        )
+    ]
+    await update.inline_query.answer(results, cache_time=1)
 
 
 async def monitor(chat_id: int, application: Application):
@@ -235,5 +265,6 @@ app.add_handler(CommandHandler(["start", "help"], help_command))
 app.add_handler(CommandHandler(["console", "code", "web"], console_command))
 app.add_handler(CommandHandler("run", run))
 app.add_handler(CommandHandler("stop", stop))
+app.add_handler(InlineQueryHandler(inline_query_handler))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, receive))
