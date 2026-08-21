@@ -19,6 +19,7 @@ from telegram import (
     InlineKeyboardMarkup,
     WebAppInfo,
     BotCommand,
+    MenuButtonCommands,
 )
 from telegram.constants import ParseMode, ChatAction
 from telegram.error import BadRequest
@@ -693,22 +694,37 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
-        BotCommand("start", "Wake Meow up"),
-        BotCommand("help", "List all available commands"),
-        BotCommand("clear", "Clear conversation memory"),
-        BotCommand("translate", "Translate with pronunciation"),
-        BotCommand("persian", "Translate directly into Persian"),
-        BotCommand("rewrite", "Rewrite naturally"),
-        BotCommand("cute", "Make it cuter"),
-        BotCommand("flirty", "Make it flirty"),
-        BotCommand("romantic", "Make it romantic"),
-        BotCommand("comfort", "Write a comforting message"),
-        BotCommand("fix", "Fix grammar"),
-        BotCommand("short", "Shorten text"),
-        BotCommand("expand", "Expand text"),
-        BotCommand("summarize", "Summarize text"),
-    ])
+    commands = [
+        BotCommand("start", "Wake Meow up & say hi 🐾"),
+        BotCommand("help", "Show all commands & tips 📖"),
+        BotCommand("clear", "Clear conversation memory 🧹"),
+        BotCommand("ping", "Check bot latency & status ⚡"),
+        BotCommand("sendcard", "Open anniversary surprise card 💌"),
+        BotCommand("schedulecard", "Schedule card for date/time ⏰"),
+        BotCommand("schedules", "View scheduled card deliveries 📋"),
+        BotCommand("cancelschedule", "Cancel a scheduled delivery ❌"),
+        BotCommand("hearts", "Send a shower of love hearts 💖"),
+        BotCommand("translate", "Translate with pronunciation 🌐"),
+        BotCommand("persian", "Translate directly into Persian 🇮🇷"),
+        BotCommand("cute", "Make message cuter & sweeter 🌸"),
+        BotCommand("flirty", "Make message playful & flirty 😏"),
+        BotCommand("romantic", "Make message heartfelt & romantic 💍"),
+        BotCommand("comfort", "Write a comforting message 🫂"),
+        BotCommand("fix", "Fix grammar & spelling ✍️"),
+        BotCommand("rewrite", "Rewrite message naturally ✨"),
+        BotCommand("short", "Shorten message concisely ✂️"),
+        BotCommand("expand", "Expand message with details 📝"),
+        BotCommand("summarize", "Summarize text into key points 📌"),
+        BotCommand("emoji", "Add fitting expressive emojis 😊"),
+        BotCommand("noemoji", "Remove all emojis from text 🚫"),
+        BotCommand("helpad", "Admin management guide ⚙️"),
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+        print("[OK] MeowBot commands & Menu Button registered successfully!")
+    except Exception as e:
+        print(f"Notice setting commands in MeowBot: {e}")
 
 
 # ==========================
