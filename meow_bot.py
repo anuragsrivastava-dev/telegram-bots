@@ -137,13 +137,11 @@ def get_card_keyboard(is_group: bool = False, user_id: int = None):
     url = f"{CARD_WEBAPP_URL}?user_id={user_id}&chat_id={user_id}" if user_id else CARD_WEBAPP_URL
     if is_group:
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("💌 Open Anniversary Card", url=TELEGRAM_CARD_LINK)],
-            [InlineKeyboardButton("🔗 Share Card", url=f"https://t.me/share/url?url={TELEGRAM_CARD_LINK}&text=A%20special%20anniversary%20card%20for%20you%20%E2%9D%A4%EF%B8%8F")]
+            [InlineKeyboardButton("💌 Open Anniversary Card", url=TELEGRAM_CARD_LINK)]
         ])
     else:
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("💌 Open Anniversary Card", web_app=WebAppInfo(url=url))],
-            [InlineKeyboardButton("🔗 Share Card (t.me/meowanuBot/card)", url=f"https://t.me/share/url?url={TELEGRAM_CARD_LINK}&text=A%20special%20anniversary%20card%20for%20you%20%E2%9D%A4%EF%B8%8F")]
+            [InlineKeyboardButton("💌 Open Anniversary Card", web_app=WebAppInfo(url=url))]
         ])
 
 
