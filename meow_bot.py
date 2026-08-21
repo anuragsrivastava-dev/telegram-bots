@@ -694,15 +694,12 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
+    # Publicly visible commands for menu & autocomplete (secret commands like /sendcard are intentionally omitted)
     commands = [
         BotCommand("start", "Wake Meow up & say hi 🐾"),
         BotCommand("help", "Show all commands & tips 📖"),
         BotCommand("clear", "Clear conversation memory 🧹"),
         BotCommand("ping", "Check bot latency & status ⚡"),
-        BotCommand("sendcard", "Open anniversary surprise card 💌"),
-        BotCommand("schedulecard", "Schedule card for date/time ⏰"),
-        BotCommand("schedules", "View scheduled card deliveries 📋"),
-        BotCommand("cancelschedule", "Cancel a scheduled delivery ❌"),
         BotCommand("hearts", "Send a shower of love hearts 💖"),
         BotCommand("translate", "Translate with pronunciation 🌐"),
         BotCommand("persian", "Translate directly into Persian 🇮🇷"),
@@ -717,7 +714,6 @@ async def set_commands(application):
         BotCommand("summarize", "Summarize text into key points 📌"),
         BotCommand("emoji", "Add fitting expressive emojis 😊"),
         BotCommand("noemoji", "Remove all emojis from text 🚫"),
-        BotCommand("helpad", "Admin management guide ⚙️"),
     ]
     try:
         await application.bot.set_my_commands(commands)
