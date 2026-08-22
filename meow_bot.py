@@ -167,6 +167,7 @@ def get_bots_ecosystem_keyboard() -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton("🎮 Gaming Hub", url="https://t.me/meoww_gamebot"),
+            InlineKeyboardButton("📥 Meow Downloader", url="https://t.me/meow_downloaderbot"),
         ],
     ])
 
@@ -394,7 +395,8 @@ async def bots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• 💰 *Price Tracker:* Amazon & Flipkart automated price alerts\n"
         "• 🔗 *URL Shortener:* Multi-provider link tools\n"
         "• 📬 *TempMail:* Disposable inboxes with auto-refresh\n"
-        "• 🎮 *Gaming Hub:* Multiplayer Telegram Web Games"
+        "• 🎮 *Gaming Hub:* Multiplayer Telegram Web Games\n"
+        "• 📥 *Meow Downloader:* YouTube & Instagram Media & MP3 Extractor"
     )
     await update.message.reply_text(
         text,
