@@ -6,7 +6,7 @@ import sqlite3
 import httpx
 from config import TEMPMAIL_BOT_TOKEN, ADMIN_USER_ID
 
-from telegram import Update, BotCommand
+from telegram import Update, BotCommand, MenuButtonCommands
 from telegram.constants import ParseMode
 from telegram.request import HTTPXRequest
 from telegram.ext import (
@@ -426,14 +426,19 @@ async def check_inboxes_job(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("start", "Start the bot"),
         BotCommand("help", "Show command list & guide"),
         BotCommand("newmail", "Generate a new disposable email"),
         BotCommand("mymail", "Show active disposable email"),
         BotCommand("check", "Check inbox manually"),
         BotCommand("delete", "Delete active disposable email"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as e:
+        print(f"Notice setting commands in TempMailBot: {e}")
 
 
 async def handle_dot_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -7,6 +7,7 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     BotCommand,
+    MenuButtonCommands,
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -584,7 +585,7 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("py", "Open Python Chapter Quest"),
         BotCommand("help", "Show Python Quest Help"),
         BotCommand("listq", "(Admin) List curriculum and questions"),
@@ -592,7 +593,12 @@ async def set_commands(application):
         BotCommand("delch", "(Admin) Delete a chapter"),
         BotCommand("addq", "(Admin) Add a question"),
         BotCommand("delq", "(Admin) Delete a question"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as e:
+        print(f"Notice setting commands in QuizBot: {e}")
 
 
 from telegram.request import HTTPXRequest

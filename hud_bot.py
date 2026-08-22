@@ -16,6 +16,7 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     BotCommand,
+    MenuButtonCommands,
 )
 from telegram.constants import ParseMode
 from telegram.request import HTTPXRequest
@@ -490,13 +491,18 @@ async def handle_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("hud", "Display live LDR status dashboard"),
         BotCommand("events", "View milestone countdowns"),
         BotCommand("add", "Add a countdown milestone"),
         BotCommand("del", "Delete a milestone"),
         BotCommand("help", "Show guide"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as e:
+        print(f"Notice setting commands in HudBot: {e}")
 
 
 request = HTTPXRequest(

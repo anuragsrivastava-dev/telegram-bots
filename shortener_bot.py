@@ -3,7 +3,7 @@ import time
 import httpx
 from config import SHORTENER_BOT_TOKEN, ADMIN_USER_ID
 
-from telegram import Update, BotCommand
+from telegram import Update, BotCommand, MenuButtonCommands
 from telegram.constants import ParseMode
 from telegram.request import HTTPXRequest
 from telegram.ext import (
@@ -214,12 +214,17 @@ async def handle_direct_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("start", "Start the bot"),
         BotCommand("help", "Show command guide"),
         BotCommand("short", "Shorten URL with optional alias"),
         BotCommand("expand", "Reveal original URL behind a short link"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as e:
+        print(f"Notice setting commands in ShortenerBot: {e}")
 
 
 request = HTTPXRequest(

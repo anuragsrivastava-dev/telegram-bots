@@ -57,6 +57,11 @@ async def main():
     for bot_app in bots:
         bot_app.add_error_handler(global_error_handler)
         await bot_app.initialize()
+        if hasattr(bot_app, "post_init") and bot_app.post_init:
+            try:
+                await bot_app.post_init(bot_app)
+            except Exception as e:
+                logging.warning(f"Error running post_init: {e}")
         await bot_app.start()
         await bot_app.updater.start_polling(
             drop_pending_updates=True,

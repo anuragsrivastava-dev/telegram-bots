@@ -11,6 +11,7 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     BotCommand,
+    MenuButtonCommands,
 )
 from telegram.constants import ParseMode
 from telegram.request import HTTPXRequest
@@ -568,12 +569,17 @@ async def handle_flip(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("match", "Start Memory Match with grid selection"),
         BotCommand("stats", "View chat leaderboard & head-to-head wins"),
         BotCommand("stop", "Stop active game"),
         BotCommand("help", "Show game rules"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as e:
+        print(f"Notice setting commands in MemoryBot: {e}")
 
 
 request = HTTPXRequest(

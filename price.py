@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 from config import PRICE_BOT_TOKEN, ADMIN_USER_ID
 
-from telegram import Update, BotCommand
+from telegram import Update, BotCommand, MenuButtonCommands
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -420,12 +420,17 @@ async def daily_price_checker(context: ContextTypes.DEFAULT_TYPE):
 init_db()
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("start", "Start the bot"),
         BotCommand("list", "View your tracked items"),
         BotCommand("remove", "Remove item by ID"),
         BotCommand("help", "Show price tracker guide"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as e:
+        print(f"Notice setting commands in PriceBot: {e}")
 
 from telegram.request import HTTPXRequest
 

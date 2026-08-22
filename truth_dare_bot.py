@@ -8,6 +8,7 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     BotCommand,
+    MenuButtonCommands,
 )
 from telegram.constants import ParseMode
 from telegram.request import HTTPXRequest
@@ -412,7 +413,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("start", "Start the bot"),
         BotCommand("help", "Show game commands"),
         BotCommand("tnd", "Start a spicy Truth or Dare round"),
@@ -420,7 +421,12 @@ async def set_commands(application):
         BotCommand("dare", "Get a spicy Dare challenge"),
         BotCommand("random", "Get a random spicy prompt"),
         BotCommand("skip", "Skip current prompt"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as e:
+        print(f"Notice setting commands in TnDBot: {e}")
 
 
 request = HTTPXRequest(
