@@ -10,6 +10,7 @@ from telegram import (
     InlineQueryResultGame,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    MenuButtonCommands,
 )
 from telegram.request import HTTPXRequest
 from telegram.ext import (
@@ -586,7 +587,10 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         user_names[user_id] = user_name
 
     chart_msg = build_leaderboard_chart(scores_by_user_game, user_names, user_id)
-    await update.message.reply_text(chart_msg, parse_mode="Markdown")
+    if update.message:
+        await update.message.reply_text(chart_msg, parse_mode="Markdown")
+    elif update.callback_query and update.callback_query.message:
+        await update.callback_query.message.reply_text(chart_msg, parse_mode="Markdown")
 
 
 async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -625,7 +629,7 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    await application.bot.set_my_commands([
+    commands = [
         # Main Interactive Directory
         BotCommand("games", "Open Interactive Games Menu (Multiplayer on top) 🎮"),
         # Multiplayer 2-Player Games (Top)
@@ -642,7 +646,13 @@ async def set_commands(application):
         # Leaderboard & Help
         BotCommand("scores", "View All-Games Leaderboard Chart"),
         BotCommand("help", "Show game directory & help"),
-    ])
+    ]
+    try:
+        await application.bot.set_my_commands(commands)
+        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+        print("[OK] GameBot commands & Menu Button registered successfully!")
+    except Exception as e:
+        print(f"Notice setting commands in GameBot: {e}")
 
 
 request = HTTPXRequest(

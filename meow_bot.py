@@ -755,14 +755,13 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_commands(application):
-    # Publicly visible commands for menu & autocomplete (secret commands like /sendcard are intentionally omitted)
+    # Publicly visible commands for menu & autocomplete (secret commands like /sendcard and /hearts are intentionally omitted)
     commands = [
         BotCommand("start", "Wake Meow up & say hi 🐾"),
         BotCommand("bots", "Explore other bots in our family 🤖"),
         BotCommand("help", "Show all commands & tips 📖"),
         BotCommand("clear", "Clear conversation memory 🧹"),
         BotCommand("ping", "Check bot latency & status ⚡"),
-        BotCommand("hearts", "Send a shower of love hearts 💖"),
         BotCommand("translate", "Translate with pronunciation 🌐"),
         BotCommand("persian", "Translate directly into Persian 🇮🇷"),
         BotCommand("cute", "Make message cuter & sweeter 🌸"),
