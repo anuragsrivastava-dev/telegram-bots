@@ -146,6 +146,31 @@ def get_card_keyboard(is_group: bool = False, user_id: int = None):
         ])
 
 
+def get_bots_ecosystem_keyboard() -> InlineKeyboardMarkup:
+    """Build interactive buttons linking directly to all other ecosystem bots."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🎮 Gaming Hub", url="https://t.me/meoww_gamebot"),
+            InlineKeyboardButton("🐍 Python Console", url="https://t.me/py_runbot"),
+        ],
+        [
+            InlineKeyboardButton("💑 LDR Couple HUD", url="https://t.me/ldr_hudbot"),
+            InlineKeyboardButton("🃏 Memory Match", url="https://t.me/meow_mmbot"),
+        ],
+        [
+            InlineKeyboardButton("🎲 Truth or Dare", url="https://t.me/meow_tadbot"),
+            InlineKeyboardButton("🎯 Quiz Quest", url="https://t.me/meow_quizbot"),
+        ],
+        [
+            InlineKeyboardButton("💰 Price Tracker", url="https://t.me/meow_pricebot"),
+            InlineKeyboardButton("📬 TempMail Bot", url="https://t.me/meow_tempmailbot"),
+        ],
+        [
+            InlineKeyboardButton("🔗 URL Shortener", url="https://t.me/meow_linkbot"),
+        ],
+    ])
+
+
 client = AsyncGroq(api_key=GROQ_API_KEY)
 
 # ==========================
@@ -343,7 +368,39 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args and "hearts" in context.args[0].lower():
         await send_hearts_response(update, context)
         return
-    await update.message.reply_text("🐾 Meow is awake! Use /help to see everything I can do.")
+    welcome_text = (
+        "🐾 *Hey there! Meow is awake and purring!* ✨\n\n"
+        "I'm your warm and playful AI companion. Chat with me anytime or use `/help` to see my writing & translation tools.\n\n"
+        "🤖 *Explore our Bot Family:* Tap below to jump straight to any of our other bots!"
+    )
+    await update.message.reply_text(
+        welcome_text,
+        reply_markup=get_bots_ecosystem_keyboard(),
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def bots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show the full ecosystem bots menu."""
+    text = (
+        "🤖 *Telegram.Meow — Bot Ecosystem Family*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "Tap any button below to launch our other bots:\n\n"
+        "• 🎮 *Gaming Hub:* Multiplayer Telegram Web Games\n"
+        "• 🐍 *Python Console:* In-browser compiler & code runner\n"
+        "• 💑 *LDR Couple HUD:* Live weather, timezone & milestones\n"
+        "• 🃏 *Memory Match:* 2-Player card matching duel\n"
+        "• 🎲 *Truth or Dare:* Romantic & spicy prompt deck\n"
+        "• 🎯 *Quiz Quest:* Interactive Python mastery curriculum\n"
+        "• 💰 *Price Tracker:* Amazon & Flipkart automated price alerts\n"
+        "• 📬 *TempMail:* Disposable inboxes with auto-refresh\n"
+        "• 🔗 *URL Shortener:* Multi-provider link tools"
+    )
+    await update.message.reply_text(
+        text,
+        reply_markup=get_bots_ecosystem_keyboard(),
+        parse_mode=ParseMode.MARKDOWN,
+    )
 
 
 async def send_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -366,7 +423,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "🐾 *Meow Bot Commands:*\n\n"
         "*General:*\n"
-        "• `/start` — Wake Meow up\n"
+        "• `/start` — Wake Meow up & see the bot family\n"
+        "• `/bots` — Browse all bots in our ecosystem 🤖\n"
         "• `/help` — Show this list of commands\n"
         "• `/clear` — Clear your recent conversation memory\n\n"
         "*Translation & Languages:*\n"
@@ -582,6 +640,9 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif clean_text.startswith((".sendhearts", ".hearts", ".heart", ".sendheart")):
         await send_hearts_response(update, context)
         return
+    elif clean_text.startswith((".bots", ".otherbots", ".ecosystem", ".botfamily")):
+        await bots_command(update, context)
+        return
     elif clean_text.startswith((".help", ".start")):
         await help_command(update, context)
         return
@@ -697,6 +758,7 @@ async def set_commands(application):
     # Publicly visible commands for menu & autocomplete (secret commands like /sendcard are intentionally omitted)
     commands = [
         BotCommand("start", "Wake Meow up & say hi 🐾"),
+        BotCommand("bots", "Explore other bots in our family 🤖"),
         BotCommand("help", "Show all commands & tips 📖"),
         BotCommand("clear", "Clear conversation memory 🧹"),
         BotCommand("ping", "Check bot latency & status ⚡"),
@@ -786,6 +848,7 @@ app.job_queue.run_repeating(
 )
 
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler(["bots", "otherbots", "ecosystem", "botfamily"], bots_command))
 app.add_handler(CommandHandler("ping", ping_command))
 app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler("help", help_command))
