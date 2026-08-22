@@ -150,23 +150,23 @@ def get_bots_ecosystem_keyboard() -> InlineKeyboardMarkup:
     """Build interactive buttons linking directly to all other ecosystem bots."""
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("🎮 Gaming Hub", url="https://t.me/meoww_gamebot"),
             InlineKeyboardButton("🐍 Python Console", url="https://t.me/py_runbot"),
-        ],
-        [
-            InlineKeyboardButton("💑 LDR Couple HUD", url="https://t.me/ldr_hudbot"),
-            InlineKeyboardButton("🃏 Memory Match", url="https://t.me/meow_mmbot"),
-        ],
-        [
-            InlineKeyboardButton("🎲 Truth or Dare", url="https://t.me/meow_tadbot"),
             InlineKeyboardButton("🎯 Quiz Quest", url="https://t.me/meow_quizbot"),
         ],
         [
+            InlineKeyboardButton("🎲 Truth or Dare", url="https://t.me/meow_tadbot"),
+            InlineKeyboardButton("🃏 Memory Match", url="https://t.me/meow_mmbot"),
+        ],
+        [
+            InlineKeyboardButton("💑 LDR Couple HUD", url="https://t.me/ldr_hudbot"),
             InlineKeyboardButton("💰 Price Tracker", url="https://t.me/meow_pricebot"),
-            InlineKeyboardButton("📬 TempMail Bot", url="https://t.me/meow_tempmailbot"),
         ],
         [
             InlineKeyboardButton("🔗 URL Shortener", url="https://t.me/meow_linkbot"),
+            InlineKeyboardButton("📬 TempMail Bot", url="https://t.me/meow_tempmailbot"),
+        ],
+        [
+            InlineKeyboardButton("🎮 Gaming Hub", url="https://t.me/meoww_gamebot"),
         ],
     ])
 
