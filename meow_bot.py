@@ -386,15 +386,15 @@ async def bots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🤖 *Telegram.Meow — Bot Ecosystem Family*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
         "Tap any button below to launch our other bots:\n\n"
-        "• 🎮 *Gaming Hub:* Multiplayer Telegram Web Games\n"
         "• 🐍 *Python Console:* In-browser compiler & code runner\n"
-        "• 💑 *LDR Couple HUD:* Live weather, timezone & milestones\n"
-        "• 🃏 *Memory Match:* 2-Player card matching duel\n"
-        "• 🎲 *Truth or Dare:* Romantic & spicy prompt deck\n"
         "• 🎯 *Quiz Quest:* Interactive Python mastery curriculum\n"
+        "• 🎲 *Truth or Dare:* Romantic & spicy prompt deck\n"
+        "• 🃏 *Memory Match:* 2-Player card matching duel\n"
+        "• 💑 *LDR Couple HUD:* Live weather, timezone & milestones\n"
         "• 💰 *Price Tracker:* Amazon & Flipkart automated price alerts\n"
+        "• 🔗 *URL Shortener:* Multi-provider link tools\n"
         "• 📬 *TempMail:* Disposable inboxes with auto-refresh\n"
-        "• 🔗 *URL Shortener:* Multi-provider link tools"
+        "• 🎮 *Gaming Hub:* Multiplayer Telegram Web Games"
     )
     await update.message.reply_text(
         text,

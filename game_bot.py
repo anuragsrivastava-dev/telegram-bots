@@ -8,6 +8,8 @@ from telegram import (
     Update,
     BotCommand,
     InlineQueryResultGame,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
 )
 from telegram.request import HTTPXRequest
 from telegram.ext import (
@@ -164,6 +166,72 @@ GAMES = {
 GAME_ORDER = ["chess", "snakes", "uno", "paddle", "frog", "flappy", "tower", "helix", "heart_catcher"]
 
 
+def get_games_menu_keyboard() -> InlineKeyboardMarkup:
+    """Build interactive inline buttons for all games with multiplayer games on top."""
+    return InlineKeyboardMarkup([
+        # --- MULTIPLAYER 2-PLAYER GAMES (TOP) ---
+        [
+            InlineKeyboardButton("♟️ Chess Duel (2P)", callback_data="play_game_chess"),
+            InlineKeyboardButton("🐍 Snakes Clash (2P)", callback_data="play_game_snakes"),
+        ],
+        [
+            InlineKeyboardButton("🃏 UNO Duel (2P)", callback_data="play_game_uno"),
+            InlineKeyboardButton("🏓 Paddle Clash (2P)", callback_data="play_game_paddle"),
+        ],
+        [
+            InlineKeyboardButton("🐸 Frog Fight (2P)", callback_data="play_game_frog"),
+        ],
+        # --- SOLO ARCADE GAMES ---
+        [
+            InlineKeyboardButton("🐦 Flappy Bird", callback_data="play_game_flappy"),
+            InlineKeyboardButton("🏗️ Tower Builder", callback_data="play_game_tower"),
+        ],
+        [
+            InlineKeyboardButton("🌀 Helix Jump", callback_data="play_game_helix"),
+            InlineKeyboardButton("💖 Heart Catcher", callback_data="play_game_heart_catcher"),
+        ],
+        # --- LEADERBOARD & SHARE ---
+        [
+            InlineKeyboardButton("🏆 View Leaderboard", callback_data="view_leaderboard"),
+            InlineKeyboardButton("✨ Share in Chat", switch_inline_query=""),
+        ],
+    ])
+
+
+async def games_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send an interactive button list of all games starting with multiplayer games on top."""
+    text = (
+        "🎮 *Telegram Gaming Hub — Game Directory*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "Select a game below to launch it instantly in this chat:\n\n"
+        "👥 *Multiplayer 2-Player Duels (Top):*\n"
+        "• ♟️ *Chess Duel* — Classic Staunton SVG P2P Chess\n"
+        "• 🐍 *Snakes Clash* — 100-Tile Animated Board Game\n"
+        "• 🃏 *UNO Duel* — 2-Player Card Showdown (+2/+4 Stacking)\n"
+        "• 🏓 *Paddle Clash* — 60 FPS Real-time Pong Duel\n"
+        "• 🐸 *Frog Fight* — Lily Pad Arena Duel\n\n"
+        "🕹️ *Solo Arcade Games:*\n"
+        "• 🐦 *Flappy Bird* — Retro Obstacle Runner\n"
+        "• 🏗️ *Tower Builder* — Precision Block Stacker\n"
+        "• 🌀 *Helix Jump* — 3D Spiral Bouncing Drop\n"
+        "• 💖 *Heart Catcher* — Reflex Catcher\n\n"
+        "💡 *Tip:* Type `@meoww_gamebot` in any chat to share inline!"
+    )
+    if update.callback_query:
+        await update.callback_query.answer()
+        await update.callback_query.message.reply_text(
+            text,
+            reply_markup=get_games_menu_keyboard(),
+            parse_mode="Markdown",
+        )
+    elif update.message:
+        await update.message.reply_text(
+            text,
+            reply_markup=get_games_menu_keyboard(),
+            parse_mode="Markdown",
+        )
+
+
 async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     start_time = time.time()
     msg = await update.message.reply_text("🏓 Pinging...")
@@ -181,6 +249,7 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin_help = (
         "👑 *Couple Game Bot Admin Control Panel:*\n\n"
         "• `/ping` — Check bot latency & online status\n"
+        "• `/games` — Interactive games list (Multiplayer on top)\n"
         "• `/chess`, `/snakes`, `/uno`, `/paddle`, `/frog` — Launch 2P games\n"
         "• `/flappy`, `/tower`, `/helix`, `/catch` — Launch Solo Arcade games\n"
         "• `/scores` — View leaderboard comparison chart\n"
@@ -192,6 +261,7 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "🎮 *Game Bot Hub:*\n\n"
+        "• `/games` or `.games` — Open Interactive Games Menu (Multiplayer on top) 🕹️\n\n"
         "👥 *Multiplayer 2-Player Games:*\n"
         "• `/chess` or `.chess` — Couple Chess Duel (2P)\n"
         "• `/snakes` or `.snakes` — Snakes & Ladders Duel (100 Tiles)\n"
@@ -208,7 +278,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• `/help` — Show this guide\n\n"
         "💡 *Inline Game:* Type `@meoww_gamebot` in any chat to share!"
     )
-    await update.message.reply_text(help_text, parse_mode="Markdown")
+    await update.message.reply_text(
+        help_text,
+        reply_markup=get_games_menu_keyboard(),
+        parse_mode="Markdown",
+    )
 
 
 # =============================================================================
@@ -279,6 +353,23 @@ async def play_frog(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+
+    # Handle custom interactive menu button clicks
+    if query.data:
+        if query.data.startswith("play_game_"):
+            game_key = query.data.replace("play_game_", "").strip()
+            if game_key in GAMES:
+                chat_id = update.effective_chat.id
+                await query.answer(f"Launching {GAMES[game_key]['title']}...")
+                msg = await context.bot.send_game(chat_id=chat_id, game_short_name=game_key)
+                if msg:
+                    record_game_message(chat_id, game_key, msg.message_id)
+                return
+        elif query.data == "view_leaderboard":
+            await query.answer("Fetching leaderboard...")
+            await leaderboard_command(update, context)
+            return
+
     game_key = query.game_short_name or query.data
 
     if game_key not in GAMES:
@@ -507,6 +598,8 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await ping_command(update, context)
     elif text.startswith(".helpad"):
         await helpad_command(update, context)
+    elif text.startswith((".games", ".game", ".play", ".menu")):
+        await games_menu_command(update, context)
     elif text.startswith((".chess", ".checkmate")):
         await play_chess(update, context)
     elif text.startswith((".snakes", ".snake", ".ladder", ".sl")):
@@ -533,6 +626,8 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def set_commands(application):
     await application.bot.set_my_commands([
+        # Main Interactive Directory
+        BotCommand("games", "Open Interactive Games Menu (Multiplayer on top) 🎮"),
         # Multiplayer 2-Player Games (Top)
         BotCommand("chess", "Play Couple Chess Duel (2P)"),
         BotCommand("snakes", "Play Snakes & Ladders Clash (2P)"),
@@ -546,7 +641,7 @@ async def set_commands(application):
         BotCommand("catch", "Play Solo Heart Catcher"),
         # Leaderboard & Help
         BotCommand("scores", "View All-Games Leaderboard Chart"),
-        BotCommand("help", "Show game help"),
+        BotCommand("help", "Show game directory & help"),
     ])
 
 
@@ -561,6 +656,7 @@ request = HTTPXRequest(
 app = ApplicationBuilder().token(GAME_BOT_TOKEN).request(request).post_init(set_commands).build()
 
 app.add_handler(CommandHandler(["start", "help"], help_command))
+app.add_handler(CommandHandler(["games", "game", "menu", "play"], games_menu_command))
 app.add_handler(CommandHandler("ping", ping_command))
 app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler(["chess"], play_chess))
