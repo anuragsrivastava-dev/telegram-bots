@@ -28,7 +28,7 @@ from telegram.ext import (
 from config import PYBOT_TOKEN, ADMIN_USER_ID
 from runner import PythonSession
 
-WEBAPP_URL = "https://anu69-web.github.io/python-console/"
+WEBAPP_URL = "https://anuragsrivastava-dev.github.io/python-console/"
 TELEGRAM_WEBAPP_LINK = "https://t.me/py_runbot/console"
 chat_sessions: dict[tuple[int, int], dict] = {}
 

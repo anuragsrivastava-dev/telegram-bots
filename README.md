@@ -163,7 +163,7 @@ A high-performance, asynchronous multi-bot backend suite engineered in Python. I
 
 ### 1. Clone & Set Up Virtual Environment
 ```bash
-git clone https://github.com/anu69-web/telegram-bots.git
+git clone https://github.com/anuragsrivastava-dev/telegram-bots.git
 cd telegram-bots
 
 python -m venv .venv
@@ -216,7 +216,7 @@ QUIZ_BOT_TOKEN=123456:ABC-DEF...
 ## 🚀 Deployment Guide
 
 ### Deployment on Wispbyte Cloud / VPS
-1. Push changes to the repository `https://github.com/anu69-web/telegram-bots.git`.
+1. Push changes to the repository `https://github.com/anuragsrivastava-dev/telegram-bots.git`.
 2. Connect your repository to **Wispbyte** or standard cloud host.
 3. Configure environment variables in the host control panel.
 4. Set execution entrypoint: `python main.py`.
@@ -225,4 +225,4 @@ QUIZ_BOT_TOKEN=123456:ABC-DEF...
 ---
 
 ## 📄 License
-This project is open-source and maintained by [anu69-web](https://github.com/anu69-web).
+This project is open-source and maintained by [anuragsrivastava-dev](https://github.com/anuragsrivastava-dev).
