@@ -238,7 +238,7 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await update.message.reply_text("🏓 Pinging...")
     latency = int((time.time() - start_time) * 1000)
     await msg.edit_text(
-        f"🏓 *Pong!* `{latency}ms`\n🎮 *Couple Game Bot* is Online & Ready to Play!",
+        f"🏓 *Pong!* `{latency}ms`\n🎮 *Gaming Hub Bot* is Online & Ready to Play!",
         parse_mode="Markdown"
     )
 
@@ -248,7 +248,7 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⛔ You are not authorized to use admin commands.")
         return
     admin_help = (
-        "👑 *Couple Game Bot Admin Control Panel:*\n\n"
+        "👑 *Gaming Hub Bot Admin Control Panel:*\n\n"
         "• `/ping` — Check bot latency & online status\n"
         "• `/games` — Interactive games list (Multiplayer on top)\n"
         "• `/chess`, `/snakes`, `/uno`, `/paddle`, `/frog` — Launch 2P games\n"
@@ -264,10 +264,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🎮 *Game Bot Hub:*\n\n"
         "• `/games` or `.games` — Open Interactive Games Menu (Multiplayer on top) 🕹️\n\n"
         "👥 *Multiplayer 2-Player Games:*\n"
-        "• `/chess` or `.chess` — Couple Chess Duel (2P)\n"
+        "• `/chess` or `.chess` — Chess Master Duel (2P)\n"
         "• `/snakes` or `.snakes` — Snakes & Ladders Duel (100 Tiles)\n"
-        "• `/uno` or `.uno` — Couple UNO Duel (2P)\n"
-        "• `/paddle` or `.paddle` — Couple Paddle Clash (2P)\n"
+        "• `/uno` or `.uno` — UNO Duel (2P)\n"
+        "• `/paddle` or `.paddle` — Paddle Clash (2P)\n"
         "• `/frog` or `.frog` — Frog Fight Lily Pad Duel (2P)\n\n"
         "🕹️ *Solo Arcade Games:*\n"
         "• `/flappy` or `.flappy` — Flappy Bird Odyssey\n"
@@ -435,7 +435,7 @@ def format_cell(text: str, width: int, align: str = "left") -> str:
 def build_leaderboard_chart(scores_by_user_game: dict, user_names: dict, current_user_id: int) -> str:
     player_ids = list(scores_by_user_game.keys())
 
-    # --- 2-PLAYER COUPLE DUEL COMPARISON CHART ---
+    # --- 2-PLAYER HEAD-TO-HEAD DUEL COMPARISON CHART ---
     if len(player_ids) == 2:
         p1_id, p2_id = player_ids[0], player_ids[1]
         p1_name = user_names.get(p1_id, "Player 1")[:8]
@@ -633,10 +633,10 @@ async def set_commands(application):
         # Main Interactive Directory
         BotCommand("games", "Open Interactive Games Menu (Multiplayer on top) 🎮"),
         # Multiplayer 2-Player Games (Top)
-        BotCommand("chess", "Play Couple Chess Duel (2P)"),
+        BotCommand("chess", "Play Chess Master Duel (2P)"),
         BotCommand("snakes", "Play Snakes & Ladders Clash (2P)"),
-        BotCommand("uno", "Play Couple UNO Duel (2P)"),
-        BotCommand("paddle", "Play Couple Paddle Clash (2P)"),
+        BotCommand("uno", "Play UNO Duel (2P)"),
+        BotCommand("paddle", "Play Paddle Clash (2P)"),
         BotCommand("frog", "Play Frog Fight Lily Pad Clash (2P)"),
         # Solo Arcade Games
         BotCommand("flappy", "Play Flappy Bird Odyssey (Solo Arcade)"),

@@ -1,4 +1,7 @@
-#This is a test
+"""
+Master Multi-Bot Runner
+Initializes and concurrently orchestrates all Telegram bot services via asyncio polling.
+"""
 
 import asyncio
 import logging
@@ -71,14 +74,14 @@ async def main():
         await asyncio.sleep(0.5)
 
     print("🤖 Python Runner Bot is online...")
-    print("🐱 Meow Bot is online...")
-    print("💰 Price Bot is online...")
+    print("🐾 Meow AI Assistant is online...")
+    print("💰 Price Tracker Bot is online...")
     print("📬 TempMail Bot is online...")
     print("🔗 Shortener Bot is online...")
-    print("🎉 Truth & Dare Bot is online...")
+    print("🎲 Truth & Dare Party Bot is online...")
     print("🧩 Memory Match Bot is online...")
-    print("🌐 LDR HUD & Milestone Bot is online...")
-    print("🎮 Heart Catcher Game Bot is online...")
+    print("🌐 World Clock & GeoOps HUD Bot is online...")
+    print("🎮 Gaming Hub Bot is online...")
     if QUIZ_BOT_TOKEN != GAME_BOT_TOKEN:
         print("🐍 Python Quiz Quest Bot is online...")
     print("✅ All bots are online and operational!")

@@ -33,31 +33,47 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "hud_bot.db")
 
 CITY_PROFILES = {
-    "user1": {
-        "name": "Kolkata, India",
+    "hub1": {
+        "name": "Kolkata, IN",
         "tz": "Asia/Kolkata",
         "lat": 22.5726,
         "lon": 88.3639,
+        "flag": "🇮🇳",
     },
-    "user2": {
-        "name": "Aran, Iran",
-        "tz": "Asia/Tehran",
-        "lat": 34.0577,
-        "lon": 51.4828,
+    "hub2": {
+        "name": "London, UK",
+        "tz": "Europe/London",
+        "lat": 51.5074,
+        "lon": -0.1278,
+        "flag": "🇬🇧",
+    },
+    "hub3": {
+        "name": "San Francisco, US",
+        "tz": "America/Los_Angeles",
+        "lat": 37.7749,
+        "lon": -122.4194,
+        "flag": "🇺🇸",
+    },
+    "hub4": {
+        "name": "Tokyo, JP",
+        "tz": "Asia/Tokyo",
+        "lat": 35.6762,
+        "lon": 139.6503,
+        "flag": "🇯🇵",
     },
 }
 
-LOVE_NOTES = [
-    "Distance means so little when someone means so much.",
-    "Counting down every single second until distance becomes zero.",
-    "You are my favorite notification, my favorite thought, and my favorite person.",
-    "One day, we won't have to say goodbye over a screen anymore.",
-    "Together or apart, you are always the first and last thing on my mind.",
-    "No matter how many miles separate us, we are looking at the exact same moon tonight.",
-    "Every day that passes is one day closer to holding your hand.",
-    "You are entirely worth every single mile between us.",
-    "Home isn't a place anymore—it's wherever you are.",
-    "The distance is only temporary, but what we have is forever.",
+DEV_TIPS_NOTES = [
+    "Premature optimization is the root of all evil. Keep designs clean and simple first.",
+    "Make it work, make it right, make it fast — in that exact order.",
+    "Simplicity is prerequisite for reliability. Modularize early, decouple often.",
+    "Good code is its own best documentation. Name variables and functions with explicit intent.",
+    "Automate repetitive workflows. CI/CD and scripted tooling save hundreds of engineering hours.",
+    "Always measure before optimizing. Profile memory and CPU bottlenecks with empirical data.",
+    "Designing for failure produces resilient architectures. Build graceful fallbacks.",
+    "Small, atomic git commits make code review, bisecting, and rollback effortless.",
+    "Code is read far more often than it is written. Optimize for clarity over cleverness.",
+    "The fastest code is the code that never runs. Cache intelligently and avoid redundant I/O.",
 ]
 
 
@@ -182,7 +198,7 @@ def format_countdown(target_date_str: str) -> str:
         diff = target - now
 
         if diff.total_seconds() <= 0:
-            return "🎉 *Today is the day\\!*"
+            return "🚀 *Milestone Reached / Release Day\\!*"
 
         days = diff.days
         hours, rem = divmod(diff.seconds, 3600)
@@ -206,76 +222,85 @@ def format_countdown(target_date_str: str) -> str:
 def get_hud_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [
-            InlineKeyboardButton("🔄 Refresh HUD", callback_data="hud_refresh"),
+            InlineKeyboardButton("🔄 Refresh Operations HUD", callback_data="hud_refresh"),
             InlineKeyboardButton("⏳ Milestones", callback_data="hud_milestones"),
         ],
         [
-            InlineKeyboardButton("💌 New Love Note", callback_data="hud_quote"),
-            InlineKeyboardButton("➕ Add Event", callback_data="hud_add_prompt"),
+            InlineKeyboardButton("💡 Engineering Tip", callback_data="hud_quote"),
+            InlineKeyboardButton("➕ Add Milestone", callback_data="hud_add_prompt"),
         ],
     ]
     return InlineKeyboardMarkup(keyboard)
 
 
 async def build_hud_text(chat_id: int) -> str:
-    u1 = CITY_PROFILES["user1"]
-    u2 = CITY_PROFILES["user2"]
+    h1 = CITY_PROFILES["hub1"]
+    h2 = CITY_PROFILES["hub2"]
+    h3 = CITY_PROFILES["hub3"]
 
-    now_u1 = datetime.datetime.now(ZoneInfo(u1["tz"]))
-    now_u2 = datetime.datetime.now(ZoneInfo(u2["tz"]))
+    now_h1 = datetime.datetime.now(ZoneInfo(h1["tz"]))
+    now_h2 = datetime.datetime.now(ZoneInfo(h2["tz"]))
+    now_h3 = datetime.datetime.now(ZoneInfo(h3["tz"]))
 
-    time_str_u1 = now_u1.strftime("%I:%M %p")
-    date_str_u1 = now_u1.strftime("%a, %b %d")
+    t1_str = now_h1.strftime("%I:%M %p")
+    d1_str = now_h1.strftime("%a, %b %d")
 
-    time_str_u2 = now_u2.strftime("%I:%M %p")
-    date_str_u2 = now_u2.strftime("%a, %b %d")
+    t2_str = now_h2.strftime("%I:%M %p")
+    d2_str = now_h2.strftime("%a, %b %d")
 
-    diff_hours = (now_u1.utcoffset() - now_u2.utcoffset()).total_seconds() / 3600
-    if diff_hours == 0:
-        diff_str = "Same Timezone"
-    elif diff_hours > 0:
-        diff_str = f"Kolkata is +{diff_hours:g}h ahead"
+    t3_str = now_h3.strftime("%I:%M %p")
+    d3_str = now_h3.strftime("%a, %b %d")
+
+    diff_hours_1_2 = (now_h1.utcoffset() - now_h2.utcoffset()).total_seconds() / 3600
+    if diff_hours_1_2 >= 0:
+        offset_str = f"Kolkata is +{diff_hours_1_2:g}h ahead of London"
     else:
-        diff_str = f"Aran is +{abs(diff_hours):g}h ahead"
+        offset_str = f"London is +{abs(diff_hours_1_2):g}h ahead of Kolkata"
 
-    temp1, cond1 = await fetch_weather(u1["lat"], u1["lon"])
-    temp2, cond2 = await fetch_weather(u2["lat"], u2["lon"])
+    temp1, cond1 = await fetch_weather(h1["lat"], h1["lon"])
+    temp2, cond2 = await fetch_weather(h2["lat"], h2["lon"])
+    temp3, cond3 = await fetch_weather(h3["lat"], h3["lon"])
 
-    km, miles = calculate_distance(u1["lat"], u1["lon"], u2["lat"], u2["lon"])
+    km_12, miles_12 = calculate_distance(h1["lat"], h1["lon"], h2["lat"], h2["lon"])
 
     milestones = get_milestones(chat_id)
     if milestones:
         m_id, m_title, m_date = milestones[0]
         cd_str = format_countdown(m_date)
         milestone_section = (
-            f"🎯 *Next Milestone:*\n"
-            f"• *{escape_md(m_title)}* \\({escape_md(m_date)}\\)\n"
-            f"  ⏳ Remaining: {cd_str}\n"
+            f"🎯 *Next Target Milestone:*\n"
+            f"• *{escape_md(m_title)}* \\(`{escape_md(m_date)}`\\)\n"
+            f"  ⏳ Countdown: {cd_str}\n"
         )
     else:
         milestone_section = (
-            "🎯 *Milestone:* _No active events set\\._\n"
-            "_\\(Use `.add <title> <YYYY-MM-DD>` to add a countdown\\)_\n"
+            "🎯 *Project Milestones:* _No active deadlines saved\\._\n"
+            "_\\(Add one using `.add <Title> <YYYY-MM-DD>`\\)_\n"
         )
 
-    random_note = escape_md(LOVE_NOTES[int(now_u1.strftime("%j")) % len(LOVE_NOTES)])
+    day_of_year = int(now_h1.strftime("%j"))
+    daily_tip = escape_md(DEV_TIPS_NOTES[day_of_year % len(DEV_TIPS_NOTES)])
 
     lines = [
-        "🌐 *LDR COUPLE HUD & STATUS*",
-        "━━━━━━━━━━━━━━━━━━",
-        f"🇮🇳 *{escape_md(u1['name'])}*",
-        f"• 🕒 `{time_str_u1}` \\| {escape_md(date_str_u1)}",
+        "🌐 *GLOBAL OPERATIONS & WORLD CLOCK HUD*",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━",
+        f"{h1['flag']} *{escape_md(h1['name'])}* \\(IST / UTC\\+5:30\\)",
+        f"• 🕒 `{t1_str}` \\| {escape_md(d1_str)}",
         f"• {escape_md(cond1)} \\(`{escape_md(temp1)}`\\)",
         "",
-        f"🇮🇷 *{escape_md(u2['name'])}*",
-        f"• 🕒 `{time_str_u2}` \\| {escape_md(date_str_u2)}",
+        f"{h2['flag']} *{escape_md(h2['name'])}* \\(GMT / UTC\\+0\\)",
+        f"• 🕒 `{t2_str}` \\| {escape_md(d2_str)}",
         f"• {escape_md(cond2)} \\(`{escape_md(temp2)}`\\)",
-        "━━━━━━━━━━━━━━━━━━",
-        f"✈️ *Separation:* `{km:,} km` \\(`{miles:,} miles`\\)",
-        f"⏱️ *Offset:* `{escape_md(diff_str)}`",
-        "━━━━━━━━━━━━━━━━━━",
+        "",
+        f"{h3['flag']} *{escape_md(h3['name'])}* \\(PST / UTC\\-8\\)",
+        f"• 🕒 `{t3_str}` \\| {escape_md(d3_str)}",
+        f"• {escape_md(cond3)} \\(`{escape_md(temp3)}`\\)",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━",
+        f"📏 *Geodesic Distance (IN ↔ UK):* `{km_12:,} km` \\(`{miles_12:,} mi`\\)",
+        f"⏱️ *Timezone Delta:* `{escape_md(offset_str)}`",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━",
         milestone_section,
-        f"💌 *Daily Note:*\n> _{random_note}_",
+        f"💡 *Engineering Wisdom:*\n> _{daily_tip}_",
     ]
 
     return "\n".join(lines)
@@ -289,7 +314,7 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await update.message.reply_text("🏓 Pinging...")
     latency = int((time.time() - start_time) * 1000)
     await msg.edit_text(
-        f"🏓 *Pong!* `{latency}ms`\n🌐 *Couple HUD Bot* is Online & Tracking!",
+        f"🏓 *Pong!* `{latency}ms`\n🌐 *GeoOps HUD Bot* is Online & Synchronized!",
         parse_mode="Markdown"
     )
 
@@ -299,11 +324,11 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⛔ You are not authorized to use admin commands.")
         return
     admin_help = (
-        "👑 *Couple HUD Bot Admin Control Panel:*\n\n"
-        "• `/ping` — Check bot latency & online status\n"
-        "• `/hud` — Display live status dashboard\n"
-        "• `/events` — View milestone countdowns\n"
-        "• `/add <title> <YYYY-MM-DD>` — Add countdown milestone\n"
+        "👑 *GeoOps HUD Bot Admin Control Panel:*\n\n"
+        "• `/ping` — Check bot latency & status\n"
+        "• `/hud` — Display live operations dashboard\n"
+        "• `/events` — View project milestone countdowns\n"
+        "• `/add <title> <YYYY-MM-DD>` — Add project milestone\n"
         "• `/del <id>` — Delete a milestone\n"
         "• `/helpad` — Show this admin help menu"
     )
@@ -312,10 +337,11 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
-        "🌹 *LDR Couple HUD & Milestone Bot is ready\\!*\n\n"
+        "🌐 *GeoOps World Clock & Operations HUD is ready\\!*\n\n"
+        "Track multi\\-timezone clocks, real\\-time weather data, geodesic distances, and sprint milestones\\.\n\n"
         "• `.hud` or `/hud` \\- Display live status dashboard\n"
         "• `.events` or `/events` \\- View & manage milestone countdowns\n"
-        "• `.add <title> <YYYY-MM-DD>` \\- Add a new milestone\n"
+        "• `.add <title> <YYYY-MM-DD>` \\- Add a new project milestone\n"
         "• `.del <id>` \\- Delete a milestone\n"
         "• `.help` \\- Show command list"
     )
@@ -336,7 +362,7 @@ async def add_milestone_command(update: Update, context: ContextTypes.DEFAULT_TY
     chat_id = update.effective_chat.id
     if not context.args or len(context.args) < 2:
         await update.message.reply_text(
-            "Usage:\n`.add <Title> <YYYY-MM-DD>`\n\n*Example:*\n`.add Meetup in Dubai 2026-12-25`",
+            "Usage:\n`.add <Title> <YYYY-MM-DD>`\n\n*Example:*\n`.add v2.0 Release Launch 2026-10-15`",
             parse_mode=ParseMode.MARKDOWN_V2,
         )
         return
@@ -348,14 +374,14 @@ async def add_milestone_command(update: Update, context: ContextTypes.DEFAULT_TY
         datetime.datetime.strptime(target_date, "%Y-%m-%d")
     except ValueError:
         await update.message.reply_text(
-            "❌ Invalid date format\\. Please use `YYYY-MM-DD` \\(e\\.g\\. `2026-12-25`\\)\\.",
+            "❌ Invalid date format\\. Please use `YYYY-MM-DD` \\(e\\.g\\. `2026-10-15`\\)\\.",
             parse_mode=ParseMode.MARKDOWN_V2,
         )
         return
 
     add_milestone(chat_id, title, target_date)
     await update.message.reply_text(
-        f"✅ *Milestone Saved\\!*\n\n🎯 *Event:* {escape_md(title)}\n📅 *Target Date:* `{target_date}`\n⏳ Remaining: {format_countdown(target_date)}",
+        f"✅ *Milestone Saved\\!*\n\n🎯 *Event:* {escape_md(title)}\n📅 *Target Date:* `{target_date}`\n⏳ Countdown: {format_countdown(target_date)}",
         parse_mode=ParseMode.MARKDOWN_V2,
     )
 
@@ -371,7 +397,7 @@ async def milestones_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return
 
-    lines = ["⏳ *Upcoming Milestones & Countdowns*\n"]
+    lines = ["⏳ *Upcoming Project Milestones & Countdowns*\n"]
     for m_id, title, date_str in milestones:
         cd = format_countdown(date_str)
         lines.append(
@@ -379,7 +405,7 @@ async def milestones_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"  📅 Date: `{date_str}`\n"
             f"  ⏳ Countdown: {cd}\n"
         )
-    lines.append("_\\(To delete an event, use `/del <id>`\\)_")
+    lines.append("_\\(To delete a milestone, use `/del <id>`\\)_")
 
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to HUD", callback_data="hud_refresh")]])
     await update.message.reply_text("\n".join(lines), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
@@ -420,7 +446,7 @@ async def handle_dot_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await helpad_command(update, context)
     elif command in ["hud", "dashboard", "status", "time", "clock"]:
         await hud_command(update, context)
-    elif command in ["add", "addevent", "newevent"]:
+    elif command in ["add", "addevent", "newevent", "addmilestone"]:
         await add_milestone_command(update, context)
     elif command in ["events", "milestones", "countdowns", "cd"]:
         await milestones_command(update, context)
@@ -439,7 +465,7 @@ async def handle_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
 
     if data == "hud_refresh":
-        await query.answer("Refreshing HUD...")
+        await query.answer("Refreshing Operations HUD...")
         text = await build_hud_text(chat_id)
         await query.edit_message_text(
             text,
@@ -451,9 +477,9 @@ async def handle_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
         milestones = get_milestones(chat_id)
         if not milestones:
-            text = "⏳ *No milestones saved yet\\!*\n\nUse `.add <Title> <YYYY-MM-DD>` in chat to add your next meetup or anniversary\\."
+            text = "⏳ *No milestones saved yet\\!*\n\nUse `.add <Title> <YYYY-MM-DD>` in chat to add your next release target or deadline\\."
         else:
-            lines = ["⏳ *Upcoming Milestones & Countdowns*\n"]
+            lines = ["⏳ *Upcoming Project Milestones & Countdowns*\n"]
             for m_id, title, date_str in milestones:
                 cd = format_countdown(date_str)
                 lines.append(
@@ -468,11 +494,11 @@ async def handle_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
     elif data == "hud_quote":
-        await query.answer("New note drawn!")
-        note = escape_md(random.choice(LOVE_NOTES))
+        await query.answer("New tip drawn!")
+        tip = escape_md(random.choice(DEV_TIPS_NOTES))
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to HUD", callback_data="hud_refresh")]])
         await query.edit_message_text(
-            f"💌 *Love Note for You:*\n\n> _{note}_",
+            f"💡 *Engineering Wisdom:*\n\n> _{tip}_",
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN_V2,
         )
@@ -481,10 +507,10 @@ async def handle_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to HUD", callback_data="hud_refresh")]])
         await query.edit_message_text(
-            "➕ *To add a milestone, send this command in chat:*\n\n"
-            "`.add <Event Title> <YYYY-MM-DD>`\n\n"
+            "➕ *To add a project milestone, send this command in chat:*\n\n"
+            "`.add <Milestone Title> <YYYY-MM-DD>`\n\n"
             "*Example:*\n"
-            "`.add Next Airport Hug 2026-12-25`",
+            "`.add Production v2.0 Launch 2026-11-01`",
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN_V2,
         )
@@ -492,11 +518,12 @@ async def handle_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def set_commands(application):
     commands = [
-        BotCommand("hud", "Display live LDR status dashboard"),
-        BotCommand("events", "View milestone countdowns"),
-        BotCommand("add", "Add a countdown milestone"),
-        BotCommand("del", "Delete a milestone"),
-        BotCommand("help", "Show guide"),
+        BotCommand("hud", "Display live operations & world clock dashboard 🌐"),
+        BotCommand("events", "View project milestone countdowns ⏳"),
+        BotCommand("add", "Add a target deadline or milestone ➕"),
+        BotCommand("del", "Delete a milestone 🗑️"),
+        BotCommand("help", "Show commands guide 📖"),
+        BotCommand("ping", "Check bot latency & status ⚡"),
     ]
     try:
         await application.bot.set_my_commands(commands)

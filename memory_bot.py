@@ -28,8 +28,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "memory_scores.db")
 
 EMOJI_BANK = [
-    "🌹", "💌", "🍫", "🥂", "💍", "✈️", "🌙", "🐱",
-    "💋", "🍓", "🧸", "🍒", "🎁", "🕯️", "💎"
+    "🚀", "⚡", "🎯", "🎲", "💎", "🎮", "🏆", "🧩",
+    "🌟", "🎨", "🛸", "🔮", "👾", "🪐", "🕹️"
 ]
 HIDDEN_CARD = "❓"
 
@@ -117,7 +117,7 @@ def build_leaderboard_text(chat_id: int) -> str:
             "Play a round with `.match` to start tracking your head\\-to\\-head wins\\."
         )
 
-    lines = ["🏆 *Couple Memory Duel \\- All\\-Time Leaderboard*\n"]
+    lines = ["🏆 *Memory Match Multiplayer Duel \\- All\\-Time Leaderboard*\n"]
     for idx, (uname, wins, played, pairs) in enumerate(leaderboard, start=1):
         escaped_name = escape_md(uname)
         win_rate = int((wins / played * 100)) if played > 0 else 0
@@ -144,7 +144,7 @@ def get_grid_selector_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton("⚡ 3×4 (Quick / 6 Pairs)", callback_data="grid_3x4"),
-            InlineKeyboardButton("💖 4×4 (Classic / 8 Pairs)", callback_data="grid_4x4"),
+            InlineKeyboardButton("🎯 4×4 (Classic / 8 Pairs)", callback_data="grid_4x4"),
         ],
         [
             InlineKeyboardButton("🔥 4×5 (10 Pairs)", callback_data="grid_4x5"),

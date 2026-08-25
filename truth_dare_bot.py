@@ -22,162 +22,216 @@ from telegram.ext import (
 )
 
 # ----------------------------------------------------
-# 100+ SPICY & ROMANTIC TRUTHS (LDR / COUPLES)
+# 100+ PARTY & ICEBREAKER TRUTHS
 # ----------------------------------------------------
 TRUTHS_POOL = [
-    "What is the very first thing you want to do the second we see each other in person?",
-    "What is your absolute favorite romantic or intimate memory of us so far?",
-    "What is a dirty or romantic fantasy about us that you have never told me?",
-    "Which photo or video of me is secretly your favorite to look at when you miss me?",
-    "What is something I do or say over call or text that instantly turns you on?",
-    "What were you honestly thinking the exact moment you realized you had feelings for me?",
-    "What is your favorite part of my body, and what do you want to do to it?",
-    "If we had an entire weekend locked in a hotel room together, how would we spend it?",
-    "What is the wildest place you would ever want to hook up with me?",
-    "What is something you wish I would wear (or not wear) on our late-night video calls?",
-    "What was the most vivid romantic or spicy dream you’ve ever had about me?",
-    "What is your favorite outfit or style that you've seen me in?",
-    "What is the most sensitive spot on your body that drives you crazy when touched?",
-    "Do you prefer slow, passionate intimacy or rough, intense energy?",
-    "What is a secret nickname you secretly wish you could call me in private?",
-    "What is something completely innocent that I do which you find unexpectedly seductive?",
-    "If you could have me do whatever you wanted for 30 minutes, what would your instructions be?",
-    "What song always makes you think of me or gets you in the mood?",
-    "Have you ever re-read our spicy chats when you were alone in bed?",
-    "What is your honest opinion on morning intimacy vs late-night intimacy?",
-    "What is one thing you are most excited to try together in bed when we close the distance?",
-    "What is the biggest turn-on you have that you rarely talk about?",
-    "If I walked into your room right now with zero warning, what is the first thing you'd do?",
-    "What is your favorite way to be kissed—soft and gentle or deep and dominant?",
-    "What is the most distracting thought about me you've had during a normal work or study day?",
-    "Would you rather be tied up/pinned down, or be the one in total control?",
-    "What is something romantic or cheesy that you secretly love when I do it?",
-    "What is the longest time you've spent thinking about me in bed before falling asleep?",
-    "What is your favorite compliment I've ever given you?",
-    "If we were playing strip poker right now, how many rounds before you're completely bare?",
-    "What is one outfit of yours that makes you feel the hottest?",
-    "What kind of teasing drives you the most insane over text or voice notes?",
-    "What is something you want me to whisper in your ear when we are cuddling in bed?",
-    "If you had to describe our chemistry in three words, which three would you pick?",
-    "What is the most daring thing you'd do with me in a semi-public place?",
-    "What is one habit of mine that you find irresistibly adorable?",
-    "Do you like being told what to do, or do you prefer giving the orders?",
-    "What is a spicy photo angle of yours that you know always gets my attention?",
-    "What was your heart rate doing the very first time we started flirting heavily?",
-    "If you could wake up next to me tomorrow morning, what is the first thing we'd do?",
-    "What is your favorite physical sensation when we are affectionate?",
-    "What is the biggest romantic surprise you have ever daydreamed about planning for me?",
-    "What is something naughty you thought about doing to me during our last video call?",
-    "Do you prefer lights on, dim candle-light, or pitch black darkness?",
-    "What is one question about my desires or kinks that you've been too shy to ask?",
-    "What is the sweetest thing I have ever done that genuinely melted your heart?",
-    "If I gave you a full body massage, where would you want me to start and finish?",
-    "What is the craziest thing distance has made you appreciate about our connection?",
-    "What is your favorite teasing message I have ever sent you?",
-    "If we had only 10 minutes together before a flight, what would we do?",
-    "What is something you want us to do under the blankets that we haven't done yet?",
-    "How often do you stare at my pictures when you're feeling lonely?",
-    "What kind of lingerie or sleepwear do you look best in?",
-    "What is the most vulnerable you have ever felt with me, and did it bring us closer?",
-    "If you could freeze time for 1 hour with just the two of us, what are we doing?",
-    "What is a physical gesture (like forehead kisses, hand holding, neck kisses) you crave most?",
-    "What is the hottest text message you have ever drafted to me but hesitated to send?",
-    "If you had to pick one word to describe how you feel when we look at each other, what is it?",
-    "What is your absolute favorite spot to be kissed?",
-    "What is something you want me to do to you that would make you completely lose your mind?",
-    "What is the most romantic date night idea you want us to experience in person?",
-    "What is something spicy you've always wanted to try but haven't told anyone before?",
-    "If I dared you to kiss me right in front of a crowd, would you do it without hesitation?",
-    "What is the most intense feeling you've had while listening to my voice notes?",
-    "What is one thing about my personality that makes you feel completely safe with me?",
-    "What would you do if I suddenly pinned your hands above your head?",
-    "What is your favorite time of day to get flirty with me?",
-    "How long after waking up do you usually check your phone for my message?",
-    "What is the most attractive quality a person can have in your eyes?",
-    "If you could teleport to my bed right this second, what are you wearing?",
-    "What is something I say that gives you butterflies every single time?",
-    "What is your stance on spicy roleplay, and what role would you pick?",
-    "What is the deepest emotional connection point you feel we share?",
-    "What is one thing you can never get enough of when it comes to us?",
-    "If we were stranded on a private island, what would our daily routine look like?",
-    "What is the most seductive look I give you on camera?",
-    "What is something you want me to do more often during our private calls?",
-    "What is the most meaningful promise we have made to each other?",
-    "If you had to pick between endless kisses or endless cuddles, which wins?",
-    "What is a secret romantic habit you have when you think about our future together?",
+    "What is the most ridiculous lie you told with a completely straight face that everyone believed?",
+    "What is your absolute biggest guilty pleasure song that you only blast when you are home alone?",
+    "What is the weirdest food combination that you genuinely enjoy eating?",
+    "If you could immediately master any single programming language or skill overnight, what would it be?",
+    "What is the most embarrassing fashion or hairstyle phase you went through in the past?",
+    "If you were granted $10 million tomorrow, what is the first completely unnecessary luxury item you would buy?",
+    "What is the most awkward text message you accidentally sent to the wrong person or group?",
+    "What is your honest opinion: tabs vs spaces, and light mode vs dark mode?",
+    "What is a popular movie or TV show that everyone raves about, but you secretly think is totally overrated?",
+    "What is the weirdest rabbit hole you've spent hours exploring on YouTube or Wikipedia at 3 AM?",
+    "What is the worst piece of advice you’ve ever given to a friend with full confidence?",
+    "If you were forced to eat only one meal for every single day for the rest of your life, what would it be?",
+    "What is the funniest or most absurd reason you have ever given to cancel plans last minute?",
+    "What is the absolute worst job or task you have ever had to do?",
+    "If you could teleport anywhere on Earth right now for exactly 2 hours, where are you going?",
+    "What is a silly superstition or irrational fear that you secretly hold?",
+    "What is your most useless, bizarre hidden talent that serves zero real-world purpose?",
+    "What is the most chaotic bug or error you have ever caused in a project or assignment?",
+    "If you could live inside the universe of any video game, book, or movie, which one would you choose?",
+    "What was your very first screen name, email address, or gaming handle?",
+    "What is the most awkward encounter you've ever had with a teacher, professor, or boss?",
+    "If your browser history from the last 7 days was projected on a billboard, how doomed would you be?",
+    "What is a habit of yours that you think is completely normal, but others find unusual?",
+    "Have you ever pretended to be on a phone call just to avoid talking to someone in public?",
+    "What is the most spontaneous thing you have ever done without any planning?",
+    "If you had to enter a talent show with only 5 minutes of preparation, what would your act be?",
+    "What is the funniest rumor you’ve ever heard about yourself?",
+    "What is an unpopular opinion you hold firmly that always starts debates among friends?",
+    "If you were a superhero or supervillain, what would your theme music and catchphrase be?",
+    "What is the most creative excuse you've ever used to get out of doing work or homework?",
+    "What was the most disastrous cooking or baking experiment you ever attempted?",
+    "If you could swap lives with any historical figure or fictional character for 24 hours, who would it be?",
+    "What is something you bought on impulse that ended up being completely useless?",
+    "What is the longest gaming, coding, or binge-watching marathon you have ever pulled?",
+    "If animals could talk, which species do you think would be the rudest?",
+    "What is your signature dance move when no one is watching?",
+    "What is the most bizarre dream you can still vividly remember having?",
+    "If you had to be trapped in an elevator for 4 hours with one celebrity, who would you pick?",
+    "What is a word or slang term that you use ironically that eventually became part of your actual vocabulary?",
+    "What is the most ridiculous thing you believed as a child for way too long?",
+    "If you were to open a quirky themed café or restaurant, what would the concept and name be?",
+    "What is your go-to karaoke track when you want to get the entire room singing along?",
+    "Have you ever tried to fix something yourself and ended up making it ten times worse?",
+    "What is the strangest gift you have ever received from someone?",
+    "If you had a warning label attached to you, what would it say?",
+    "What is the most trivial argument you have ever had with a friend that got surprisingly heated?",
+    "What fictional world would you refuse to visit even if you were offered a million dollars?",
+    "What is your most memorable accidental injury from doing something utterly stupid?",
+    "If you could invent a holiday where everyone had to participate in one silly ritual, what would it be?",
+    "What is the ultimate comfort movie that you have watched more than 5 times?",
+    "What is something you are surprisingly terrible at despite trying multiple times to learn?",
+    "If you had to describe your current work or study style in three words, what would they be?",
+    "What is the most awkward zoom call or online meeting moment you’ve experienced?",
+    "If you could eliminate one mundane daily chore forever, which one would it be?",
+    "What is the best practical joke you have ever pulled (or had pulled on you)?",
+    "What is the most adventurous thing on your bucket list that you haven't done yet?",
+    "If you had to be an Olympic athlete, which sport would you have the highest chance of not embarrassing yourself in?",
+    "What is the weirdest nickname you’ve ever been given and how did you get it?",
+    "What is a skill from the 1800s that you wish was still common today?",
+    "If you were writing an autobiography, what would the title of chapter 1 be?",
+    "What is something you do to procrastinate that actually feels productive but isn't?",
+    "If you had the power to make one thing illegal solely because it annoys you, what is it?",
+    "What was the very first video game you ever fell in love with?",
+    "If you could have dinner with any 3 people (alive, historical, or fictional), who are they?",
+    "What is the most chaotic board game or multiplayer game night experience you've ever had?",
+    "If you could instantly speak 3 new languages fluently, which ones would you pick?",
+    "What is something simple that you constantly forget how to do or spell?",
+    "If you were invisible for 24 hours, what harmless mischief would you get up to?",
+    "What is your favorite memory from a road trip or vacation with friends?",
+    "What was the most satisfying moment of instant karma you have ever witnessed?",
+    "If you could design a new roller coaster, what would be its main gimmick?",
+    "What is the most questionable life hack that you actually tried and used?",
+    "If you could instantly know the undeniable truth behind one mystery in history, which would you pick?",
+    "What is the most memorable concert, event, or convention you've ever attended?",
+    "What is an app on your phone that you know you should delete but just can't bring yourself to?",
+    "If you were challenged to survive on a deserted island with only 3 everyday items, what are they?",
+    "What is the funniest inside joke you share with your circle of friends?",
+    "If you had to rename yourself tomorrow, what cool new first name would you choose?",
+    "What is the worst movie you have ever sat through entirely until the credits rolled?",
+    "If your life was turned into a sitcom, what would be your recurring catchphrase or running gag?",
+    "What is the strangest hobby or subculture you’ve ever stumbled across on the internet?",
+    "What is the most awkward mispronunciation or autocorrect fail you've sent recently?",
+    "If you were given a chance to travel to Mars on a one-way trip, would you take it?",
+    "What is a food that everyone loves that you simply cannot stand?",
+    "What was the boldest bluff you've ever pulled off in a card game or negotiation?",
+    "If you had to spend 24 hours without any screens, what would your day look like?",
+    "What is the most underrated superpower that would actually be amazingly useful in everyday life?",
+    "What is your favorite retro tech gadget that you miss using?",
+    "If you had to pitch a terrible movie plot that somehow gets a $100M budget, what is it?",
+    "What is the coolest fact you learned recently that blew your mind?",
+    "If you could have any mythical creature as a domesticated pet, which one are you adopting?",
+    "What is the most embarrassing song in your Spotify / Apple Music wrapped?",
+    "If you could instantly swap roles with your favorite YouTuber or streamer for a week, would you?",
+    "What is a rule or tradition you think is completely outdated and needs to change?",
+    "If you had to compete on a reality TV game show, which one gives you the best odds of winning?",
+    "What is the funniest misunderstanding you’ve had with someone due to text without tone?",
+    "What is your favorite coding, work, or study beverage of choice?",
+    "If you found a time machine that only worked once, would you go to the past or future?",
+    "What is the most dramatic overreaction you've ever had to something totally minor?",
+    "What is one piece of technology you hope gets invented in the next 10 years?",
 ]
 
 # ----------------------------------------------------
-# 100+ SPICY & ROMANTIC DARES (LDR / COUPLES)
+# 100+ PARTY & ICEBREAKER DARES
 # ----------------------------------------------------
 DARES_POOL = [
-    "Send a 10-second voice note whispering in your most seductive voice what you want to do to me.",
-    "Send a mirror selfie showing off your favorite outfit or curve right now.",
-    "Bite your lip, take a close-up photo, and send it to the chat.",
-    "Record a voice note describing what you are wearing right now in sensual detail.",
-    "Send a photo of your bare legs or shoulders from bed.",
-    "Send a 5-second voice note breathing softly into the mic like you are lying right next to me.",
-    "Take a spicy picture from an angle you've never sent before and send it to the chat.",
-    "Type out an explicit paragraph describing exactly how our first night together will go.",
-    "Send a voice note confessing your dirtiest thought about me from today.",
-    "Give your phone camera a slow, intense kiss and send the video snippet.",
-    "Unbutton or lift up one piece of clothing, take a tease photo, and send it.",
-    "Send a voice note calling me your favorite pet name with full emotion.",
-    "Send a screenshot of your lock screen wallpaper right now.",
-    "Record a 10-second voice message telling me exactly what you love most about my body.",
-    "Send a selfie from bed giving your most seductive bedroom eyes.",
-    "Send a photo showing off your collarbone or neckline.",
-    "Send a voice note describing a fantasy scenario involving us in vivid detail.",
-    "Send a voice note telling me 'You belong to me' in your most commanding tone.",
-    "Drop your top 3 favorite spicy emojis that describe what you want right now.",
-    "Send a 5-second clip running your fingers through your hair while looking into the camera.",
-    "Send a photo of the bed where we will eventually sleep together.",
-    "Send a voice note saying 'I miss you so much it hurts' as softly as you can.",
-    "Type out 5 explicit things you want me to do to you the next time we are alone.",
-    "Send a picture of your lips making a pout or gentle kiss face.",
-    "Send a voice note describing the exact touch or kiss you crave right this second.",
-    "Send a tease photo showing the waistband of your underwear or sleepwear.",
-    "Record a voice note making the cutest soft gasp or sigh you can make.",
-    "Send a photo of your favorite scent/perfume/cologne bottle and tell me what it reminds you of.",
-    "Send a voice note ranking the top 3 physical things you want to do with me from 1 to 3.",
-    "Send a close-up photo of your eyes looking straight into the lens.",
-    "Type out a mini erotic story where we are the two main characters.",
-    "Send a voice note saying 'Good girl' / 'Good boy' or 'My love' in your deepest tone.",
-    "Send a video snippet blowing a slow, passionate kiss directly to the camera.",
-    "Take a silhouette or low-light photo in your room and send it.",
-    "Send a voice note telling me what you would do if I climbed on top of you right now.",
-    "Send a picture of your hands resting in your lap.",
-    "Send a voice note laughing gently and telling me how crazy you are about me.",
-    "Send a spicy text message that would make anyone else blush if they read it.",
-    "Send a photo of yourself wearing something that belongs to me (or your favorite lounge wear).",
-    "Send a 10-second voice note talking about how good it will feel when distance is finally zero.",
-    "Send a close-up photo of your neck or jawline.",
-    "Record a voice note moaning my name very softly.",
-    "Send a picture showing off your back or waist.",
-    "Type out a romantic vow you want to make to me for when we are together.",
-    "Send a voice note telling me what my voice does to your body.",
-    "Send a selfie holding a piece of paper that says 'All yours'.",
-    "Send a photo from bed showing the empty space next to you waiting for me.",
-    "Send a voice note daring me to do something spicy back to you.",
-    "Send a 5-second video tracing your finger along your collarbone or lips.",
-    "Send a screenshot of the romantic/spicy song currently at the top of your mind.",
-    "Send a voice note asking for permission in the naughtiest way possible.",
-    "Send a tease photo showing off your bare back or shoulders in low light.",
-    "Record a voice note giving me three strict rules I must obey when we meet in person.",
-    "Send a selfie biting your finger or thumb seductively.",
-    "Send a voice note telling me the most naughty thing you've ever imagined doing to me in a car.",
-    "Send a photo showing your bare feet or ankles resting on the sheets.",
-    "Send a voice note describing in 3 sentences what you'd do if we woke up tangled together.",
-    "Send a picture of yourself wearing red or black, or your favorite nightwear.",
-    "Type out the most intense compliment you have ever wanted to give my body.",
-    "Send a voice note whispering 'You're mine' 3 times with increasing intensity.",
-    "Send a photo of your hand making a heart over your chest.",
-    "Record a 5-second voice note telling me where you want my hands first.",
-    "Send a tease selfie where your face is hidden but your body looks irresistible.",
-    "Send a voice note describing what my scent or cologne does to you.",
-    "Send a photo showing your smile right now after reading this prompt.",
+    "Send a 10-second voice note doing your best dramatic movie villain monologue.",
+    "Type out your next 3 messages using ONLY emojis and let the group guess what you mean.",
+    "Pitch a completely ridiculous startup idea to the chat in 3 sentences with maximum hype.",
+    "Send a voice note rapping the lyrics of any nursery rhyme with serious hip-hop energy.",
+    "Take a photo of the most random or interesting object within arm's reach and give it an epic backstory.",
+    "Send a 5-second voice note doing your best robot impression warning everyone of an impending glitch.",
+    "Write a short, overly dramatic 4-line poem about coffee, tea, or water and send it to the chat.",
+    "Send a selfie making the most absurd, ridiculous face you can muster without laughing.",
+    "Send a voice note speaking in a posh 19th-century Victorian aristocrat accent.",
+    "Quickly draw a portrait of a cat or dog in 15 seconds (on paper or digital canvas) and send the photo.",
+    "Send a voice note narrating your next physical action like you are a sports commentator at the Olympics.",
+    "Tell a genuinely terrible dad joke in the chat. If no one laughs, you must send another.",
+    "Send a screenshot of the 5th photo currently in your camera roll.",
+    "Send a voice note humming the theme song of your favorite video game or movie and let others guess it.",
+    "Type out a message explaining quantum computing or recursion in language that a 5-year-old would understand.",
+    "Send a voice note doing an impression of your favorite cartoon or video game character.",
+    "Drop your top 5 most frequently used emojis in the chat with zero context.",
+    "Send a photo of your desk or workspace setup right this second without tidying anything up.",
+    "Send a 5-second voice note making the most authentic race car acceleration sound you can create.",
+    "Write an acrostic poem using the letters of your first name where every line is a superpower.",
+    "Send a voice note giving an impassioned 15-second speech about why pineapple on pizza is either pure genius or a crime.",
+    "Send a screenshot of your current battery percentage and screen time.",
+    "Send a voice note speaking only in questions for 15 seconds.",
+    "Drop a 3-sentence cliffhanger story that ends right at the most suspenseful moment.",
+    "Take a photo of your shoes or socks right now and give them a fashion rating out of 10.",
+    "Send a voice note singing the first line of the last song you listened to with full vibrato.",
+    "Send a message where the first letter of every word spells out a secret hidden word.",
+    "Send a voice note delivering a breaking news weather forecast for an imaginary alien planet.",
+    "Give an overly intellectual review of an ordinary object nearby (like a pen, mug, or keyboard).",
+    "Send a selfie giving two enthusiastic thumbs up with the biggest grin possible.",
+    "Write a mini motivational speech in 2 sentences that sounds like a cheesy 80s movie coach.",
+    "Send a voice note laughing like an evil mastermind who just successfully hacked a mainframe.",
+    "Drop a completely made-up word in chat, give its dictionary definition, and use it in a sentence.",
+    "Send a photo of the book, notebook, or tab closest to you and share one quote from it.",
+    "Send a voice note doing an epic movie trailer voice over describing your daily routine.",
+    "Write a short haiku about debugging or computer errors and post it.",
+    "Send a voice note singing 'Happy Birthday' in opera style.",
+    "Send a photo showing your view out the window right now.",
+    "Send a voice note listing 10 fruits or vegetables as fast as you humanly can without stuttering.",
+    "Pitch yourself as a playable fighting game character (list your 2 special moves and ultimate attack).",
+    "Send a voice note doing your best impression of a pirate finding treasure.",
+    "Share a random piece of trivia that sounds 100% fake but is actually real.",
+    "Send a selfie saluting the camera like a starship captain ready for warp speed.",
+    "Type out your favorite tongue twister 3 times fast without making a single typo.",
+    "Send a voice note describing what you had for your last meal in the style of a Michelin star food critic.",
+    "Invent a new superhero whose power is completely useless in combat but great at house chores.",
+    "Send a photo of a doodle you drew on paper right now in under 10 seconds.",
+    "Send a voice note pretending you are an astronaut reporting back to Houston about finding aliens.",
+    "Drop a riddle in chat and see who in the group can solve it first without Googling.",
+    "Send a voice note speaking in slow motion like a tape running out of batteries.",
+    "Type out the lyrics to the chorus of your favorite song from memory without looking them up.",
+    "Send a photo of whatever beverage you are currently drinking (or empty mug).",
+    "Send a voice note acting out an audition for an action hero jumping out of an exploding helicopter.",
+    "Give the person above you in chat an over-the-top superhero title and backstory.",
+    "Send a 10-second voice note beatboxing your best rhythm.",
+    "Send a screenshot of your phone's home screen wallpaper.",
+    "Write a dramatic review of a slice of bread as if it changed your life.",
+    "Send a voice note counting backwards from 20 to 1 in a whisper.",
+    "Send a photo of your pet (or if you don't have one, draw your dream pet).",
+    "Send a voice note giving a 10-second eulogy for a bug you accidentally stepped on.",
+    "Type out a message backwards so the group has to read it in reverse.",
+    "Send a voice note doing your best auctioneer fast-talking impression.",
+    "Pick 3 random emojis and write a 1-sentence micro story connecting all three.",
+    "Send a selfie giving a high-five directly to the camera lens.",
+    "Send a voice note imitating the dial-up internet connection sound.",
+    "Write a 3-line dialogue between a toaster and a microwave arguing over who is more important.",
+    "Send a voice note singing the theme of Tetris using only 'la la la'.",
+    "Send a photo of your favorite hoodie, jacket, or piece of clothing.",
+    "Send a voice note speaking like a GPS navigation system recalculating a route.",
+    "Give an acceptance speech for winning the 'World Champion of Napping' trophy.",
+    "Send a photo of the nearest clock or watch showing current time.",
+    "Send a voice note doing your best sheep, duck, or cow impression.",
+    "Write a 1-sentence conspiracy theory about why socks mysteriously vanish in the laundry.",
+    "Send a voice note presenting an infomercial for a magic pen that solves all problems.",
+    "Send a selfie with an object balanced on your head without letting it fall.",
+    "Send a voice note imitating a radio DJ introducing the next mega-hit track.",
+    "Type a message using only words that start with the letter 'S'.",
+    "Send a voice note singing a 5-second guitar solo using your voice.",
+    "Send a screenshot of the last song you added to your music playlist.",
+    "Write a horoscope prediction for tomorrow that is oddly specific and funny.",
+    "Send a voice note greeting everyone in 4 different languages in a single breath.",
+    "Send a photo of the most colorful thing in your room right now.",
+    "Send a voice note pretending you are a medieval herald announcing royal decree.",
+    "Send a message explaining your job or study using only cooking metaphors.",
+    "Send a voice note reciting the alphabet backwards from G to A dramatically.",
+    "Send a selfie wearing your sunglasses or headphones in a cool pose.",
+    "Send a voice note making a continuous dramatic soap-opera gasp.",
+    "Write a message describing what aliens would think if they observed human gym workouts.",
+    "Send a photo of your current keyboard or mouse setup.",
+    "Send a voice note acting like a chef who just dropped the world's most expensive soufflé.",
+    "Send a message challenging anyone in the chat to a game of rock-paper-scissors.",
+    "Send a voice note doing your best impression of an echo inside a giant canyon.",
+    "Send a photo of something in your room that has the color yellow.",
+    "Send a voice note whispering a top-secret classified spy message.",
+    "Type out an inspiring quote from a fictional character without saying who said it.",
+    "Send a voice note sounding like a commentator during a high-stakes chess championship.",
+    "Send a selfie pointing at the screen with an approving nod.",
+    "Send a voice note reviewing the ambient background noise in your room.",
+    "Write a short 2-sentence manifesto declaring yourself ruler of a small fictional kingdom.",
+    "Send a voice note finishing this dare with an enthusiastic 'Mission Accomplished!'.",
 ]
-
 
 # ----------------------------------------------------
 # No-Repeat Shuffle Cycle Engine
@@ -213,7 +267,7 @@ def get_game_keyboard(last_type: str = "random") -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton("🗣️ Truth", callback_data="tnd_truth"),
-            InlineKeyboardButton("🔥 Dare", callback_data="tnd_dare"),
+            InlineKeyboardButton("⚡ Dare", callback_data="tnd_dare"),
         ],
         [
             InlineKeyboardButton("🎲 Random", callback_data="tnd_random"),
@@ -226,10 +280,10 @@ def get_game_keyboard(last_type: str = "random") -> InlineKeyboardMarkup:
 def get_prompt_text(user_name: str, choice_type: str) -> tuple[str, str]:
     if choice_type == "truth":
         prompt = escape_md(truth_deck.draw())
-        return f"💋 *Truth for* *{user_name}*:\n\n> {prompt}", "truth"
+        return f"🗣️ *Truth for* *{user_name}*:\n\n> {prompt}", "truth"
     elif choice_type == "dare":
         prompt = escape_md(dare_deck.draw())
-        return f"🔥 *Dare for* *{user_name}*:\n\n> {prompt}", "dare"
+        return f"⚡ *Dare for* *{user_name}*:\n\n> {prompt}", "dare"
     else:  # random or skip resolution
         is_truth = random.choice([True, False])
         if is_truth:
@@ -248,7 +302,7 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await update.message.reply_text("🏓 Pinging...")
     latency = int((time.time() - start_time) * 1000)
     await msg.edit_text(
-        f"🏓 *Pong!* `{latency}ms`\n🔥 *Truth & Dare Bot* is Online & Ready to Play! ✨",
+        f"🏓 *Pong!* `{latency}ms`\n🎲 *Truth & Dare Party Bot* is Online & Ready to Play! ✨",
         parse_mode="Markdown"
     )
 
@@ -260,9 +314,9 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin_help = (
         "👑 *Truth & Dare Bot Admin Control Panel:*\n\n"
         "• `/ping` — Check bot latency & online status\n"
-        "• `/tnd` — Start a spicy round\n"
-        "• `/truth` — Draw a spicy Truth question\n"
-        "• `/dare` — Draw a spicy Dare challenge\n"
+        "• `/tnd` — Start an interactive party round\n"
+        "• `/truth` — Draw a Truth question\n"
+        "• `/dare` — Draw a Dare challenge\n"
         "• `/random` — Draw a random prompt\n"
         "• `/skip` — Skip to next prompt\n"
         "• `/helpad` — Show this admin help menu"
@@ -272,12 +326,13 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
-        "🌹 *Spicy & Romantic Truth or Dare Bot is ready\\!*\n\n"
-        "Works in DMs & Groups with both `/` and `.` prefixes\\.\n\n"
+        "🎲 *Truth or Dare Party Bot is ready\\!*\n\n"
+        "Packed with 200\\+ fun icebreakers, funny stories, and creative challenges\\.\n"
+        "Works in DMs & Group chats with both `/` and `.` prefixes\\.\n\n"
         "• `.tnd` or `/tnd` \\- Spin up interactive game board\n"
-        "• `.truth` or `/truth` \\- Draw a deep/spicy truth\n"
-        "• `.dare` or `/dare` \\- Draw a spicy/romantic dare\n"
-        "• `.random` or `/random` \\- Draw a random spicy prompt\n"
+        "• `.truth` or `/truth` \\- Draw an engaging Truth question\n"
+        "• `.dare` or `/dare` \\- Draw a fun Dare challenge\n"
+        "• `.random` or `/random` \\- Draw a random prompt\n"
         "• `.skip` or `/skip` \\- Skip and draw another prompt\n"
         "• `.help` or `/help` \\- Show command guide"
     )
@@ -286,18 +341,18 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
-        "📖 *Couple Game Guide:*\n\n"
-        "1\\. Use `.tnd` or `/tnd` to start a round\\.\n"
-        "2\\. Take turns tapping *Truth*, *Dare*, *Random*, or *Skip*\\.\n"
-        "3\\. You can also call direct commands like `.truth`, `.dare`, `.random`, or `.skip`\\."
+        "📖 *Truth or Dare Party Game Guide:*\n\n"
+        "1\\. Use `.tnd` or `/tnd` to start an interactive game round\\.\n"
+        "2\\. Take turns tapping *Truth*, *Dare*, *Random*, or *Skip* buttons\\.\n"
+        "3\\. You can also draw directly using `.truth`, `.dare`, `.random`, or `.skip`\\."
     )
     await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 async def tnd_round_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
-        "🔥 *Spicy Truth or Dare Round Started\\!*\n\n"
-        "Choose your fate below, my love:"
+        "🎲 *Truth or Dare Round Started\\!*\n\n"
+        "Choose your challenge below:"
     )
     await update.message.reply_text(
         msg,
@@ -414,13 +469,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def set_commands(application):
     commands = [
-        BotCommand("start", "Start the bot"),
-        BotCommand("help", "Show game commands"),
-        BotCommand("tnd", "Start a spicy Truth or Dare round"),
-        BotCommand("truth", "Get a spicy Truth question"),
-        BotCommand("dare", "Get a spicy Dare challenge"),
-        BotCommand("random", "Get a random spicy prompt"),
-        BotCommand("skip", "Skip current prompt"),
+        BotCommand("start", "Start the Truth & Dare bot 🎲"),
+        BotCommand("help", "Show game commands & rules 📖"),
+        BotCommand("tnd", "Start an interactive Truth or Dare round 🎯"),
+        BotCommand("truth", "Get a Truth question 🗣️"),
+        BotCommand("dare", "Get a Dare challenge ⚡"),
+        BotCommand("random", "Get a random Truth or Dare prompt 🎲"),
+        BotCommand("skip", "Skip current prompt ⏭️"),
+        BotCommand("ping", "Check bot latency & status 🏓"),
     ]
     try:
         await application.bot.set_my_commands(commands)

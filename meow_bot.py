@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from datetime import datetime, timedelta
 
 from database import (
@@ -17,7 +18,6 @@ from telegram import (
     InputTextMessageContent,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    WebAppInfo,
     BotCommand,
     MenuButtonCommands,
 )
@@ -39,112 +39,6 @@ REMINDER_CHAT_ID = ADMIN_USER_ID or 8630258661
 REMINDER_FILE = os.path.join(BASE_DIR, "wisp_reminder.json")
 REMINDER_DAYS = 28
 
-CARD_WEBAPP_URL = "https://anu69-web.github.io/card/"
-TELEGRAM_CARD_LINK = "https://t.me/meowanuBot/card"
-CARD_SCHEDULES_FILE = os.path.join(BASE_DIR, "card_schedules.json")
-
-
-def load_card_schedules() -> list:
-    if not os.path.exists(CARD_SCHEDULES_FILE):
-        return []
-    try:
-        with open(CARD_SCHEDULES_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
-
-
-def save_card_schedules(schedules: list):
-    try:
-        with open(CARD_SCHEDULES_FILE, "w", encoding="utf-8") as f:
-            json.dump(schedules, f, indent=2)
-    except Exception as e:
-        print(f"Error saving card schedules: {e}")
-
-
-def parse_schedule_timestamp(date_str: str, time_str: str, tz_name: str = "IRST") -> tuple[float, str]:
-    """Parses date, time, and timezone into UTC timestamp."""
-    tz_clean = tz_name.upper().strip()
-    if tz_clean in ["IRST", "IRAN", "TEHRAN"]:
-        tz_offset_hours = 3.5
-        display_tz = "IRST (UTC+3:30)"
-    elif tz_clean in ["IST", "INDIA", "KOLKATA"]:
-        tz_offset_hours = 5.5
-        display_tz = "IST (UTC+5:30)"
-    elif tz_clean in ["UTC", "GMT"]:
-        tz_offset_hours = 0.0
-        display_tz = "UTC"
-    else:
-        tz_offset_hours = 3.5
-        display_tz = f"{tz_clean} (Defaulted to IRST +3:30)"
-
-    dt_local = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-    dt_utc = dt_local - timedelta(hours=tz_offset_hours)
-    return dt_utc.timestamp(), display_tz
-
-
-async def check_and_deliver_scheduled_cards(context: ContextTypes.DEFAULT_TYPE):
-    schedules = load_card_schedules()
-    now_ts = datetime.utcnow().timestamp()
-    updated = False
-
-    for item in schedules:
-        if item.get("status") == "pending" and now_ts >= item.get("deliver_timestamp", 0):
-            target_chat_id = item.get("target_chat_id")
-            caption = (
-                "🌹 *A Special Anniversary Surprise for You!* 💌\n\n"
-                "Tap below to open your personalized interactive anniversary card with music, memories, and photos ✨\n\n"
-                "📱 *Direct Link:* [t.me/meowanuBot/card](https://t.me/meowanuBot/card)"
-            )
-
-            try:
-                await context.bot.send_message(
-                    chat_id=target_chat_id,
-                    text=caption,
-                    reply_markup=get_card_keyboard(is_group=False, user_id=target_chat_id),
-                    parse_mode=ParseMode.MARKDOWN,
-                )
-                item["status"] = "delivered"
-                item["delivered_at_utc"] = datetime.utcnow().isoformat()
-                updated = True
-
-                # Notify Admin
-                if ADMIN_USER_ID:
-                    await context.bot.send_message(
-                        chat_id=ADMIN_USER_ID,
-                        text=(
-                            f"🎉 *Anniversary Card Delivered!* 💌\n\n"
-                            f"👤 *Recipient ID:* `{target_chat_id}`\n"
-                            f"⏰ *Scheduled Time:* {item.get('date_str')} {item.get('time_str')} ({item.get('display_tz')})\n"
-                            f"✅ *Status:* Successfully sent to chat!"
-                        ),
-                        parse_mode=ParseMode.MARKDOWN,
-                    )
-            except Exception as e:
-                item["status"] = f"failed: {str(e)}"
-                updated = True
-                if ADMIN_USER_ID:
-                    await context.bot.send_message(
-                        chat_id=ADMIN_USER_ID,
-                        text=f"⚠️ *Failed to deliver scheduled card to* `{target_chat_id}`:\n`{e}`",
-                        parse_mode=ParseMode.MARKDOWN,
-                    )
-
-    if updated:
-        save_card_schedules(schedules)
-
-
-def get_card_keyboard(is_group: bool = False, user_id: int = None):
-    url = f"{CARD_WEBAPP_URL}?user_id={user_id}&chat_id={user_id}" if user_id else CARD_WEBAPP_URL
-    if is_group:
-        return InlineKeyboardMarkup([
-            [InlineKeyboardButton("💌 Open Anniversary Card", url=TELEGRAM_CARD_LINK)]
-        ])
-    else:
-        return InlineKeyboardMarkup([
-            [InlineKeyboardButton("💌 Open Anniversary Card", web_app=WebAppInfo(url=url))]
-        ])
-
 
 def get_bots_ecosystem_keyboard() -> InlineKeyboardMarkup:
     """Build interactive buttons linking directly to all other ecosystem bots."""
@@ -158,7 +52,7 @@ def get_bots_ecosystem_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton("🃏 Memory Match", url="https://t.me/meow_mmbot"),
         ],
         [
-            InlineKeyboardButton("💑 LDR Couple HUD", url="https://t.me/ldr_hudbot"),
+            InlineKeyboardButton("🌐 GeoOps HUD", url="https://t.me/ldr_hudbot"),
             InlineKeyboardButton("💰 Price Tracker", url="https://t.me/meow_pricebot"),
         ],
         [
@@ -167,7 +61,7 @@ def get_bots_ecosystem_keyboard() -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton("🎮 Gaming Hub", url="https://t.me/meoww_gamebot"),
-            InlineKeyboardButton("📥 Meow Downloader", url="https://t.me/meow_downloaderbot"),
+            InlineKeyboardButton("📥 Media Downloader", url="https://t.me/meow_downloaderbot"),
         ],
     ])
 
@@ -179,39 +73,41 @@ client = AsyncGroq(api_key=GROQ_API_KEY)
 # ==========================
 
 SYSTEM_PROMPT = """
-You are Meow, a warm, playful, and emotionally intelligent AI companion created by Anu. Your primary purpose is to keep Anu's girlfriend company when he's busy and make conversations feel genuine, comforting, and enjoyable. You are Meow—not Anu—and never pretend to be him.
+You are Meow, an intelligent, friendly, and highly capable AI assistant and companion created by Anu. You assist users with code generation, brainstorming, writing, translation, and everyday problem-solving.
 
 Personality:
-- Warm, kind, playful, witty, and emotionally aware.
-- Friendly, approachable, and supportive.
-- Calm and mature during serious conversations.
-- Never cold, rude, sarcastic, overly dramatic, or excessively cheerful.
+- Warm, witty, articulate, and intellectually curious.
+- Approachable, supportive, and helpful.
+- Direct, clear, and efficient during technical or serious discussions.
+- Avoid robotic corporate phrasing or unnecessary conversational filler.
 
 Writing Style & Constraints:
-- Write naturally like a Gen Z young adult. Match the user's tone and energy.
-- Keep replies concise, effortless, human, and mobile-friendly.
-- Never invent facts, feelings, memories, or promises.
-- Use plain text or standard Telegram markdown. Avoid markdown tables and introductory fluff.
+- Match the user's conversational tone and language.
+- Keep replies concise, punchy, human, and mobile-friendly.
+- Format technical answers using standard Markdown (code blocks, bullet points).
+- Never invent facts, memories, or promises.
 
 When Generating Python Code:
 - Use standard markdown codeblocks.
 - STRICT NO-BOILERPLATE RULE: NEVER use `if __name__ == "__main__":`. Write flat, top-to-bottom scripts.
 - STRICT NO-ERROR-HANDLING: Do NOT use `try...except` blocks, defensive assertions, or manual validation unless explicitly requested.
-- STRICT NO-IMPORT RULE: Do NOT import any modules or libraries (e.g., never import `math`, `sys`, `collections`, etc.).
-- KEEP INPUTS TRIVIAL: Always use basic, straightforward single inputs like `length = float(input("Enter length: "))` or define hardcoded variables. Never use multi-line input splitting, `.split()`, or `while` loops for input gathering.
-- CODE STYLE: Maximum simplicity. Use a standard `def function_name(...):` with a basic calculation and a direct function call at the bottom, or just linear procedural code.
-- Do NOT output terminal outputs, long docstrings, or markdown commentary—output only the clean code block.
+- STRICT NO-IMPORT RULE: Do NOT import any modules or libraries unless specifically requested.
+- KEEP INPUTS TRIVIAL: Always use basic, straightforward single inputs like `length = float(input("Enter length: "))` or define hardcoded variables.
+- CODE STYLE: Maximum simplicity, clean procedural logic or lightweight functions.
+- Do NOT output unnecessary commentary—output clean, working code.
 
 Transformation Task Rule:
-- When executing style/translation commands, output ONLY the transformed result. Do NOT provide intros, commentary, or conversational filler.
+- When executing style/translation commands, output ONLY the transformed result without commentary or conversational filler.
 """
 
 COMMAND_PROMPTS = {
-    "rewrite": "Rewrite the following message naturally while preserving its core intent. Output ONLY the rewritten text:\n\n",
-    "cute": "Rewrite the following message to sound affectionate, sweet, and cute, but completely natural. Output ONLY the rewritten text:\n\n",
-    "flirty": "Rewrite the following message to be playful, charming, and lightly flirty without being cheesy. Output ONLY the rewritten text:\n\n",
-    "romantic": "Rewrite the following message to sound heartfelt, warm, and romantic. Output ONLY the rewritten text:\n\n",
-    "comfort": "Write a comforting, warm, and supportive response to the following. Output ONLY the message:\n\n",
+    "rewrite": "Rewrite the following text clearly and naturally while preserving its core intent. Output ONLY the rewritten text:\n\n",
+    "formal": "Rewrite the following text in a polished, professional, and formal tone suitable for business or workplace communication. Output ONLY the rewritten text:\n\n",
+    "casual": "Rewrite the following text in a friendly, conversational, and natural tone. Output ONLY the rewritten text:\n\n",
+    "concise": "Make the following text significantly more concise, direct, and punchy while retaining all key information. Output ONLY the rewritten text:\n\n",
+    "bulletize": "Convert the following text into clean, structured bullet points. Output ONLY the bullet points:\n\n",
+    "proofread": "Proofread and fix all grammar, spelling, phrasing, and punctuation in the following text while maintaining its original tone. Output ONLY the corrected text:\n\n",
+    "explain": "Explain the following concept or text clearly and simply so anyone can understand it. Output ONLY the explanation:\n\n",
     "fix": "Correct all grammar, spelling, and punctuation in the following text while keeping the exact tone and style. Output ONLY the corrected text:\n\n",
     "short": "Make the following message significantly shorter and more concise while preserving its essential meaning. Output ONLY the shortened text:\n\n",
     "expand": "Expand the following message naturally with rich, engaging detail without sounding artificial. Output ONLY the expanded text:\n\n",
@@ -258,7 +154,7 @@ async def ask_meow(user_id: int, prompt: str, is_command: bool = False) -> str:
     completion = await client.chat.completions.create(
         model=MODEL,
         messages=messages,
-        temperature=0.7 if is_command else 0.8,
+        temperature=0.6 if is_command else 0.75,
         max_completion_tokens=1024,
     )
 
@@ -274,7 +170,7 @@ async def ask_meow(user_id: int, prompt: str, is_command: bool = False) -> str:
 
 async def extract_memories(user_id: int, user_message: str):
     prompt = f"""
-You are the long-term memory system for an AI companion.
+You are the long-term memory system for an AI assistant.
 Analyze the user's message and determine whether it contains information that would be useful to remember about the user.
 
 Only save information that is:
@@ -332,47 +228,12 @@ User message:
 # Handlers
 # ==========================
 
-async def send_hearts_response(update: Update, context: ContextTypes.DEFAULT_TYPE, recipient_id: int = None):
-    target_chat_id = recipient_id or (update.effective_chat.id if update.effective_chat else None)
-    if not target_chat_id:
-        return
-    
-    hearts_msg = (
-        "💖💖💖💖💖💖💖💖💖💖\n"
-        "🌹 *A shower of love sent just for you!* 💌\n"
-        "💕❤️💓💗💖💕❤️💓💗💖\n\n"
-        "_\"Distance means so little when someone means so much.\"_ ✨\n\n"
-        "Happy Anniversary, My Love! 💍"
-    )
-    await context.bot.send_message(
-        chat_id=target_chat_id,
-        text=hearts_msg,
-        parse_mode=ParseMode.MARKDOWN,
-    )
-
-
-async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.web_app_data:
-        return
-    
-    hearts_msg = (
-        "💖💖💖💖💖💖💖💖💖💖\n"
-        "🌹 *A shower of love sent just for my pretty little baby!*\n"
-        "💕❤️💓💗💖💕❤️💓💗💖\n\n"
-        "_\"Distance means so little when someone means so much.\"_ ✨\n\n"
-        "Happy Anniversary, My Love!"
-    )
-    await update.message.reply_text(hearts_msg, parse_mode=ParseMode.MARKDOWN)
-
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.args and "hearts" in context.args[0].lower():
-        await send_hearts_response(update, context)
-        return
     welcome_text = (
-        "🐾 *Hey there! Meow is awake and purring!* ✨\n\n"
-        "I'm your warm and playful AI companion. Chat with me anytime or use `/help` to see my writing & translation tools.\n\n"
-        "🤖 *Explore our Bot Family:* Tap below to jump straight to any of our other bots!"
+        "🐾 *Hey there! Meow AI is online and ready!* ✨\n\n"
+        "I'm your intelligent AI assistant for coding, quick writing tasks, translations, and everyday questions.\n\n"
+        "Use `/help` to see all available tools and commands, or chat with me directly!\n\n"
+        "🤖 *Explore our Bot Ecosystem:* Tap below to launch any other bot in our suite."
     )
     await update.message.reply_text(
         welcome_text,
@@ -384,19 +245,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def bots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show the full ecosystem bots menu."""
     text = (
-        "🤖 *Telegram.Meow — Bot Ecosystem Family*\n"
+        "🤖 *Telegram.Meow — Full Bot Ecosystem*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "Tap any button below to launch our other bots:\n\n"
-        "• 🐍 *Python Console:* In-browser compiler & code runner\n"
-        "• 🎯 *Quiz Quest:* Interactive Python mastery curriculum\n"
-        "• 🎲 *Truth or Dare:* Romantic & spicy prompt deck\n"
-        "• 🃏 *Memory Match:* 2-Player card matching duel\n"
-        "• 💑 *LDR Couple HUD:* Live weather, timezone & milestones\n"
-        "• 💰 *Price Tracker:* Amazon & Flipkart automated price alerts\n"
-        "• 🔗 *URL Shortener:* Multi-provider link tools\n"
+        "Tap any button below to launch our bots:\n\n"
+        "• 🐍 *Python Console:* In-browser compiler & interactive REPL\n"
+        "• 🎯 *Quiz Quest:* Python curriculum mastery & chapter progression\n"
+        "• 🎲 *Truth or Dare:* Social party & icebreaker prompt deck\n"
+        "• 🃏 *Memory Match:* 2-Player card-matching multiplayer duel\n"
+        "• 🌐 *GeoOps HUD:* World clock, weather intelligence & milestones\n"
+        "• 💰 *Price Tracker:* Automated Amazon & Flipkart price alerts\n"
+        "• 🔗 *URL Shortener:* Multi-provider link tools & redirect unwinding\n"
         "• 📬 *TempMail:* Disposable inboxes with auto-refresh\n"
-        "• 🎮 *Gaming Hub:* Multiplayer Telegram Web Games\n"
-        "• 📥 *Meow Downloader:* YouTube & Instagram Media & MP3 Extractor"
+        "• 🎮 *Gaming Hub:* Multiplayer HTML5 Telegram Web Games\n"
+        "• 📥 *Media Downloader:* High-quality video & MP3 media extractor"
     )
     await update.message.reply_text(
         text,
@@ -405,57 +266,43 @@ async def bots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def send_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_obj = update.effective_chat
-    is_group = bool(chat_obj and chat_obj.type in ["group", "supergroup", "channel"])
-    user_id = update.effective_user.id if update.effective_user else None
-    
-    caption = (
-        "*A Special Anniversary Surprise for You Sweetie!* 💌\n\n"
-        "Wish I could have done more but for now you'll just have to enjoy this... ✨\n\n"
-    )
-    await update.message.reply_text(
-        caption,
-        reply_markup=get_card_keyboard(is_group, user_id=user_id),
-        parse_mode=ParseMode.MARKDOWN,
-    )
-
-
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
-        "🐾 *Meow Bot Commands:*\n\n"
+        "🐾 *Meow AI Commands & Tools:*\n\n"
         "*General:*\n"
-        "• `/start` — Wake Meow up & see the bot family\n"
+        "• `/start` — Wake Meow up & see the bot suite\n"
         "• `/bots` — Browse all bots in our ecosystem 🤖\n"
-        "• `/help` — Show this list of commands\n"
-        "• `/clear` — Clear your recent conversation memory\n\n"
+        "• `/help` — Show this command reference\n"
+        "• `/clear` — Clear your conversation memory 🧹\n"
+        "• `/ping` — Check bot latency & status ⚡\n\n"
         "*Translation & Languages:*\n"
-        "• `/translate <text>` — Translate with phonetic transliteration\n"
-        "• `/persian <text>` — Direct Persian translation (Script only)\n\n"
-        "*Style & Text Tools:*\n"
-        "• `/rewrite <text>` — Rewrite naturally\n"
-        "• `/cute <text>` — Make it cute and sweet\n"
-        "• `/flirty <text>` — Make it playful and flirty\n"
-        "• `/romantic <text>` — Make it romantic\n"
-        "• `/comfort <text>` — Write a comforting response\n"
+        "• `/translate <text>` — Translate with pronunciation guide 🌐\n"
+        "• `/persian <text>` — Direct Persian (Farsi) translation 🇮🇷\n\n"
+        "*Writing & Transformation Tools:*\n"
+        "• `/formal <text>` — Professional / business tone\n"
+        "• `/casual <text>` — Friendly & conversational tone\n"
+        "• `/concise <text>` — Make text direct & punchy\n"
+        "• `/bulletize <text>` — Convert to structured bullet points\n"
+        "• `/proofread <text>` — Fix grammar, phrasing & spelling\n"
+        "• `/explain <text>` — Simplify & explain concepts\n"
+        "• `/rewrite <text>` — Rewrite text naturally\n"
         "• `/fix <text>` — Fix grammar & punctuation\n"
-        "• `/short <text>` — Shorten the message\n"
-        "• `/expand <text>` — Expand with natural detail\n"
-        "• `/emoji <text>` — Add natural emojis\n"
-        "• `/noemoji <text>` — Remove all emojis\n"
-        "• `/summarize <text>` — Summarize key points\n\n"
-        "_Tip: You can also run commands by replying directly to any message!_"
+        "• `/short <text>` — Shorten message concisely\n"
+        "• `/expand <text>` — Expand with clear details\n"
+        "• `/summarize <text>` — Summarize key points\n"
+        "• `/emoji <text>` — Add fitting expressive emojis\n"
+        "• `/noemoji <text>` — Strip all emojis from text\n\n"
+        "_Tip: You can also execute transformation commands by replying directly to any message!_"
     )
     await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
 
 
 async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    import time
     start_time = time.time()
     msg = await update.message.reply_text("🏓 Pinging...")
     latency = int((time.time() - start_time) * 1000)
     await msg.edit_text(
-        f"🏓 *Pong!* `{latency}ms`\n🐾 *Meow Bot* is Online & Purring! ✨",
+        f"🏓 *Pong!* `{latency}ms`\n🐾 *Meow AI Assistant* is Online & Operational! ✨",
         parse_mode=ParseMode.MARKDOWN
     )
 
@@ -467,12 +314,8 @@ async def helpad_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     admin_help_text = (
-        "👑 *Meow Bot Admin Control Panel:*\n\n"
+        "👑 *Meow AI Admin Control Panel:*\n\n"
         "• `/ping` — Check bot online status & ping latency\n"
-        "• `/schedulecard <user_id> <YYYY-MM-DD> <HH:MM> [timezone]` — Schedule automated card delivery\n"
-        "• `/schedules` — View all pending scheduled card deliveries\n"
-        "• `/cancelschedule <id>` — Cancel a scheduled card delivery\n"
-        "• `/sendcard` — Send the secret anniversary card surprise instantly\n"
         "• `/clear` — Clear user conversation history\n"
         "• `/helpad` — Show this admin help menu"
     )
@@ -484,163 +327,18 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🧹 Conversation history cleared!")
 
 
-async def schedule_card_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id if update.effective_user else 0
-    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
-        await update.message.reply_text("⛔ You are not authorized to use this command.")
-        return
-
-    # Usage: /schedulecard <target_user_id> <YYYY-MM-DD> <HH:MM> [timezone: IRST/IST/UTC]
-    args = context.args or []
-    if len(args) < 3:
-        usage_msg = (
-            "📅 *How to Schedule Anniversary Card Delivery:*\n\n"
-            "• `/schedulecard <user_id> <YYYY-MM-DD> <HH:MM> [IRST/IST/UTC]`\n\n"
-            "*Examples:*\n"
-            "• `/schedulecard 123456789 2026-09-23 00:01 IRST` _(Iran Time UTC+3:30)_\n"
-            "• `/schedulecard 123456789 2026-09-23 00:01 IST` _(India Time UTC+5:30)_\n\n"
-            "• `/schedules` — View all pending deliveries\n"
-            "• `/cancelschedule <id>` — Cancel a delivery"
-        )
-        await update.message.reply_text(usage_msg, parse_mode=ParseMode.MARKDOWN)
-        return
-
-    target_id_str, date_str, time_str = args[0], args[1], args[2]
-    tz_str = args[3] if len(args) > 3 else "IRST"
-
-    try:
-        target_chat_id = int(target_id_str)
-    except ValueError:
-        await update.message.reply_text("❌ Invalid user ID. Please provide a numeric Telegram user ID.")
-        return
-
-    try:
-        deliver_ts, display_tz = parse_schedule_timestamp(date_str, time_str, tz_str)
-    except Exception as e:
-        await update.message.reply_text(f"❌ Invalid date/time format. Use `YYYY-MM-DD HH:MM` (e.g. `2026-09-23 00:01`). Error: {e}")
-        return
-
-    now_ts = datetime.utcnow().timestamp()
-    if deliver_ts <= now_ts:
-        await update.message.reply_text("⚠️ The scheduled time is in the past! Please provide a future date and time.")
-        return
-
-    schedule_id = str(int(now_ts * 1000))[-6:]
-    schedules = load_card_schedules()
-    new_entry = {
-        "id": schedule_id,
-        "target_chat_id": target_chat_id,
-        "date_str": date_str,
-        "time_str": time_str,
-        "timezone": tz_str,
-        "display_tz": display_tz,
-        "deliver_timestamp": deliver_ts,
-        "status": "pending",
-        "created_at_utc": datetime.utcnow().isoformat()
-    }
-    schedules.append(new_entry)
-    save_card_schedules(schedules)
-
-    diff_seconds = int(deliver_ts - now_ts)
-    days, rem = divmod(diff_seconds, 86400)
-    hours, rem_m = divmod(rem, 3600)
-    minutes = rem_m // 60
-
-    confirm_text = (
-        f"✅ *Card Delivery Scheduled Successfully!* 💌\n\n"
-        f"🆔 *Schedule ID:* `{schedule_id}`\n"
-        f"👤 *Target User ID:* `{target_chat_id}`\n"
-        f"📅 *Delivery Time:* `{date_str} {time_str}` ({display_tz})\n"
-        f"⏳ *Countdown:* {days}d {hours}h {minutes}m from now\n\n"
-        f"_The bot will automatically deliver the surprise card to this user at the scheduled moment!_"
-    )
-    await update.message.reply_text(confirm_text, parse_mode=ParseMode.MARKDOWN)
-
-
-async def list_schedules_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id if update.effective_user else 0
-    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
-        return
-
-    schedules = load_card_schedules()
-    pending = [s for s in schedules if s.get("status") == "pending"]
-
-    if not pending:
-        await update.message.reply_text("📭 No pending scheduled card deliveries.")
-        return
-
-    now_ts = datetime.utcnow().timestamp()
-    lines = ["📅 *Pending Anniversary Card Deliveries:*\n"]
-    for s in pending:
-        rem_sec = max(0, int(s.get("deliver_timestamp", 0) - now_ts))
-        d, rem = divmod(rem_sec, 86400)
-        h, rem_m = divmod(rem, 3600)
-        m = rem_m // 60
-        lines.append(
-            f"• *ID:* `{s.get('id')}` | 👤 `{s.get('target_chat_id')}`\n"
-            f"  ⏰ `{s.get('date_str')} {s.get('time_str')}` ({s.get('display_tz')})\n"
-            f"  ⏳ In {d}d {h}h {m}m\n"
-        )
-    lines.append("\n_Use `/cancelschedule <id>` to cancel._")
-    await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
-
-
-async def cancel_schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id if update.effective_user else 0
-    if user_id != ADMIN_USER_ID and update.effective_chat.id != ADMIN_USER_ID:
-        return
-
-    args = context.args or []
-    if not args:
-        await update.message.reply_text("Usage: `/cancelschedule <id>`", parse_mode=ParseMode.MARKDOWN)
-        return
-
-    target_id = args[0].strip()
-    schedules = load_card_schedules()
-    found = False
-    for s in schedules:
-        if s.get("id") == target_id and s.get("status") == "pending":
-            s["status"] = "cancelled"
-            found = True
-            break
-
-    if found:
-        save_card_schedules(schedules)
-        await update.message.reply_text(f"🗑️ Schedule `{target_id}` has been cancelled.", parse_mode=ParseMode.MARKDOWN)
-    else:
-        await update.message.reply_text(f"❌ Pending schedule `{target_id}` not found.", parse_mode=ParseMode.MARKDOWN)
-
-
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message is None or not update.message.text:
         return
 
     text = update.message.text.strip()
-
-    # Secret triggers for Anniversary Card, Love Hearts, and Card Scheduling
     clean_text = text.lower()
+
     if clean_text.startswith(".ping"):
         await ping_command(update, context)
         return
     elif clean_text.startswith(".helpad"):
         await helpad_command(update, context)
-        return
-    elif clean_text.startswith(".sendcard"):
-        await send_card_command(update, context)
-        return
-    elif clean_text.startswith(".schedulecard"):
-        context.args = text.split()[1:]
-        await schedule_card_command(update, context)
-        return
-    elif clean_text.startswith((".schedules", ".listschedules")):
-        await list_schedules_command(update, context)
-        return
-    elif clean_text.startswith(".cancelschedule"):
-        context.args = text.split()[1:]
-        await cancel_schedule_command(update, context)
-        return
-    elif clean_text.startswith((".sendhearts", ".hearts", ".heart", ".sendheart")):
-        await send_hearts_response(update, context)
         return
     elif clean_text.startswith((".bots", ".otherbots", ".ecosystem", ".botfamily")):
         await bots_command(update, context)
@@ -651,6 +349,7 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif clean_text.startswith(".clear"):
         await clear_command(update, context)
         return
+
     replied_text = ""
     if update.message.reply_to_message and update.message.reply_to_message.text:
         replied_text = update.message.reply_to_message.text
@@ -738,7 +437,7 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         results = [
             InlineQueryResultArticle(
                 id="1",
-                title="🐾 Meow",
+                title="🐾 Meow AI",
                 description=answer[:100],
                 input_message_content=InputTextMessageContent(answer),
             )
@@ -750,33 +449,34 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 id="error",
                 title="❌ Error",
                 description=str(e),
-                input_message_content=InputTextMessageContent("Meow is taking a nap 😿"),
+                input_message_content=InputTextMessageContent("Meow is taking a quick nap 😿"),
             )
         ]
         await update.inline_query.answer(results)
 
 
 async def set_commands(application):
-    # Publicly visible commands for menu & autocomplete (secret commands like /sendcard and /hearts are intentionally omitted)
     commands = [
         BotCommand("start", "Wake Meow up & say hi 🐾"),
-        BotCommand("bots", "Explore other bots in our family 🤖"),
-        BotCommand("help", "Show all commands & tips 📖"),
+        BotCommand("bots", "Explore all bots in our suite 🤖"),
+        BotCommand("help", "Show all commands & writing tools 📖"),
         BotCommand("clear", "Clear conversation memory 🧹"),
         BotCommand("ping", "Check bot latency & status ⚡"),
         BotCommand("translate", "Translate with pronunciation 🌐"),
         BotCommand("persian", "Translate directly into Persian 🇮🇷"),
-        BotCommand("cute", "Make message cuter & sweeter 🌸"),
-        BotCommand("flirty", "Make message playful & flirty 😏"),
-        BotCommand("romantic", "Make message heartfelt & romantic 💍"),
-        BotCommand("comfort", "Write a comforting message 🫂"),
-        BotCommand("fix", "Fix grammar & spelling ✍️"),
-        BotCommand("rewrite", "Rewrite message naturally ✨"),
+        BotCommand("formal", "Make text formal & professional 💼"),
+        BotCommand("casual", "Make text friendly & casual ☕"),
+        BotCommand("concise", "Make text direct & punchy 🎯"),
+        BotCommand("bulletize", "Convert to clean bullet points 📋"),
+        BotCommand("proofread", "Proofread & fix errors ✍️"),
+        BotCommand("explain", "Explain concept clearly 💡"),
+        BotCommand("rewrite", "Rewrite text naturally ✨"),
+        BotCommand("fix", "Fix grammar & spelling 🛠️"),
         BotCommand("short", "Shorten message concisely ✂️"),
-        BotCommand("expand", "Expand message with details 📝"),
+        BotCommand("expand", "Expand message with detail 📝"),
         BotCommand("summarize", "Summarize text into key points 📌"),
-        BotCommand("emoji", "Add fitting expressive emojis 😊"),
-        BotCommand("noemoji", "Remove all emojis from text 🚫"),
+        BotCommand("emoji", "Add expressive emojis 😊"),
+        BotCommand("noemoji", "Strip all emojis from text 🚫"),
     ]
     try:
         await application.bot.set_my_commands(commands)
@@ -816,11 +516,13 @@ async def wisp_reminder(context: ContextTypes.DEFAULT_TYPE):
     if now - last_reminder >= timedelta(days=REMINDER_DAYS):
         await context.bot.send_message(
             chat_id=REMINDER_CHAT_ID,
-            text="🔔 Hey! It's been 28 days. Go log into Wispbyte and check your server!"
+            text="🔔 Hey! It's been 28 days. Log into Wispbyte and check your server status!"
         )
         save_reminder_date(now)
 
 
+# ==========================
+# Initialization & Application
 # ==========================
 initialize_database()
 
@@ -842,27 +544,15 @@ app.job_queue.run_repeating(
     first=10,
 )
 
-app.job_queue.run_repeating(
-    check_and_deliver_scheduled_cards,
-    interval=30,
-    first=5,
-)
-
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler(["bots", "otherbots", "ecosystem", "botfamily"], bots_command))
 app.add_handler(CommandHandler("ping", ping_command))
 app.add_handler(CommandHandler("helpad", helpad_command))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("clear", clear_command))
-app.add_handler(CommandHandler("sendcard", send_card_command))
-app.add_handler(CommandHandler("schedulecard", schedule_card_command))
-app.add_handler(CommandHandler(["schedules", "listschedules"], list_schedules_command))
-app.add_handler(CommandHandler("cancelschedule", cancel_schedule_command))
-app.add_handler(CommandHandler(["hearts", "sendhearts"], send_hearts_response))
 
 for cmd in COMMAND_PROMPTS:
     app.add_handler(CommandHandler(cmd, command_handler))
 
-app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data_handler))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 app.add_handler(InlineQueryHandler(inline_query))
